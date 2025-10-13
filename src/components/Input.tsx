@@ -1,31 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View,
-  TextInput,
+  FormControl,
+  Input as NBInput,
+  IInputProps,
   Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-  TouchableOpacity,
-} from 'react-native';
-import { Colors } from '../constants/colors';
-import { InputSizes, Spacing, BorderRadius } from '../constants/spacing';
-import { TextStyles } from '../constants/typography';
+  Box
+} from 'native-base';
 
-interface InputProps {
+interface InputProps extends IInputProps {
   label?: string;
-  placeholder?: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  secureTextEntry?: boolean;
-  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
-  multiline?: boolean;
-  numberOfLines?: number;
   error?: string;
   disabled?: boolean;
-  size?: 'sm' | 'base' | 'lg';
-  style?: ViewStyle;
-  inputStyle?: TextStyle;
+  size?: 'sm' | 'md' | 'lg';
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
 }
@@ -41,154 +27,41 @@ export const Input: React.FC<InputProps> = ({
   numberOfLines = 1,
   error,
   disabled = false,
-  size = 'base',
-  style,
-  inputStyle,
+  size = 'md',
   rightIcon,
   onRightIconPress,
+  ...props
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
-
-  const containerStyle = [
-    styles.container,
-    style,
-  ];
-
-  const inputContainerStyle = [
-    styles.inputContainer,
-    styles[size],
-    isFocused && styles.focused,
-    error && styles.error,
-    disabled && styles.disabled,
-  ];
-
-  const textInputStyle = [
-    styles.input,
-    styles[`${size}Input`],
-    disabled && styles.disabledInput,
-    inputStyle,
-  ];
-
   return (
-    <View style={containerStyle}>
+    <FormControl isInvalid={!!error} isDisabled={disabled} mb={4} {...props}>
       {label && (
-        <Text style={styles.label}>
-          {label}
-        </Text>
+        <FormControl.Label>
+          <Text fontWeight="medium">{label}</Text>
+        </FormControl.Label>
       )}
       
-      <View style={inputContainerStyle}>
-        <TextInput
-          style={textInputStyle}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.textDisabled}
+      <Box flexDirection="row" alignItems="center">
+        <NBInput
           value={value}
           onChangeText={onChangeText}
+          placeholder={placeholder}
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           multiline={multiline}
           numberOfLines={numberOfLines}
-          editable={!disabled}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          isDisabled={disabled}
+          size={size}
+          flex={1}
+          InputRightElement={rightIcon}
+          {...props}
         />
-        
-        {rightIcon && (
-          <TouchableOpacity
-            style={styles.rightIcon}
-            onPress={onRightIconPress}
-            disabled={!onRightIconPress}
-          >
-            {rightIcon}
-          </TouchableOpacity>
-        )}
-      </View>
+      </Box>
       
       {error && (
-        <Text style={styles.errorText}>
+        <FormControl.ErrorMessage>
           {error}
-        </Text>
+        </FormControl.ErrorMessage>
       )}
-    </View>
+    </FormControl>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: Spacing.base,
-  },
-  
-  label: {
-    ...TextStyles.bodySmall,
-    color: Colors.text,
-    marginBottom: Spacing.sm,
-    fontWeight: '500',
-  },
-  
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.base,
-  },
-  
-  // サイズ別スタイル
-  sm: {
-    ...InputSizes.sm,
-  },
-  base: {
-    ...InputSizes.base,
-  },
-  lg: {
-    ...InputSizes.lg,
-  },
-  
-  // 状態別スタイル
-  focused: {
-    borderColor: Colors.primary,
-    borderWidth: 2,
-  },
-  error: {
-    borderColor: Colors.error,
-  },
-  disabled: {
-    backgroundColor: Colors.surfaceVariant,
-    borderColor: Colors.textDisabled,
-  },
-  
-  input: {
-    flex: 1,
-    ...TextStyles.body,
-    color: Colors.text,
-    padding: 0,
-  },
-  
-  // サイズ別入力スタイル
-  smInput: {
-    ...TextStyles.bodySmall,
-  },
-  baseInput: {
-    ...TextStyles.body,
-  },
-  lgInput: {
-    ...TextStyles.body,
-    fontSize: 18,
-  },
-  
-  disabledInput: {
-    color: Colors.textDisabled,
-  },
-  
-  rightIcon: {
-    padding: Spacing.sm,
-    marginRight: Spacing.sm,
-  },
-  
-  errorText: {
-    ...TextStyles.caption,
-    color: Colors.error,
-    marginTop: Spacing.xs,
-  },
-});

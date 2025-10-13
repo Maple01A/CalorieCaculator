@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  Box,
   ScrollView,
-  RefreshControl,
-  Alert,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Spinner,
+  Center,
+  Pressable,
+  useToast,
+  Progress,
+  Badge
+} from 'native-base';
+import { RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { databaseService } from '../services/database';
-import { CalorieProgress } from '../components/CalorieProgress';
 import { Card } from '../components/Card';
-import { ModernCard } from '../components/ModernCard';
-import { GradientCard } from '../components/GradientCard';
-import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import { Colors } from '../constants/colors';
-import { Spacing, BorderRadius } from '../constants/spacing';
-import { TextStyles } from '../constants/typography';
+import { Ionicons } from '@expo/vector-icons';
 import { DailySummary, MealRecord } from '../types';
 import { calculateTotalNutrition, calculateMacroBalance } from '../utils/calorieCalculator';
 
@@ -32,6 +32,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -73,30 +74,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>読み込み中...</Text>
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+        <Center flex={1}>
+          <Spinner size="lg" color={Colors.primary} />
+          <Text mt={4} color="gray.500">読み込み中...</Text>
+        </Center>
       </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.errorSubtext}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+        <Center flex={1} p={8}>
+          <Heading color="error.500" mb={2}>エラー</Heading>
+          <Text color="gray.600" textAlign="center" mb={6}>
+            {error}
+          </Text>
+          <Text color="gray.500" textAlign="center" mb={8}>
             アプリを再起動してください
           </Text>
           <Button
             title="再試行"
             onPress={loadDailySummary}
             variant="primary"
-            style={styles.retryButton}
           />
-        </View>
+        </Center>
       </SafeAreaView>
     );
   }
@@ -109,11 +112,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const macroBalance = calculateMacroBalance(totalNutrition);
+  
+  const getCalorieStatus = () => {
+    const percentage = Math.round((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100);
+    if (percentage < 90) return { color: "warning.500", text: "目標まで" };
+    if (percentage <= 110) return { color: "success.500", text: "目標達成" };
+    return { color: "error.500", text: "目標超過" };
+  };
+
+  const calorieStatus = getCalorieStatus();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
-        style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -123,449 +134,197 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           />
         }
       >
-        <GradientCard variant="primary" style={styles.headerCard}>
-          <View style={styles.header}>
-            <View style={styles.headerContent}>
-              <View style={styles.titleRow}>
-                <Icon name="calories" size={32} color={Colors.textOnPrimary} />
-                <Text style={styles.title}>カロリー計算</Text>
-              </View>
-              <Text style={styles.subtitle}>今日の栄養摂取を管理しましょう</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={handleViewSettings}
-              activeOpacity={0.7}
-            >
-              <Icon name="settings" size={24} color={Colors.textOnPrimary} />
-            </TouchableOpacity>
-          </View>
-        </GradientCard>
-
-        {/* カロリー進捗 */}
-        <View style={styles.progressContainer}>
-          <CalorieProgress
-            current={totalNutrition.calories}
-            goal={dailySummary?.goalCalories || 2000}
-            size="lg"
-          />
-        </View>
-
-        {/* マクロ栄養素バランス */}
-        <ModernCard 
-          style={styles.macroCard} 
-          variant="elevated"
-          title="マクロ栄養素バランス"
-          subtitle="栄養バランスを確認しましょう"
-        >
-          <View style={styles.macroContainer}>
-            <View style={styles.macroItem}>
-              <View style={styles.macroHeader}>
-                <View style={styles.macroLabelContainer}>
-                  <Icon name="protein" size={16} color={Colors.primary} />
-                  <Text style={styles.macroLabel}>タンパク質</Text>
-                </View>
-                <Text style={styles.macroValue}>
-                  {macroBalance.proteinGrams}g ({macroBalance.proteinPercentage}%)
-                </Text>
-              </View>
-              <View style={[styles.macroBar, { backgroundColor: Colors.primarySoft }]}>
-                <View
-                  style={[
-                    styles.macroFill,
-                    { 
-                      width: `${macroBalance.proteinPercentage}%`,
-                      backgroundColor: Colors.primary,
-                    }
-                  ]}
+        <Box px={4} py={2}>
+          <HStack justifyContent="space-between" alignItems="center" mb={2}>
+            <VStack>
+              <Heading size="xl">カロリー計算</Heading>
+              <Text color="gray.500">今日の栄養摂取を管理しましょう</Text>
+            </VStack>
+            <Pressable onPress={handleViewSettings} p={2} bg="gray.100" borderRadius="full">
+              <Ionicons name="settings-outline" size={24} color={Colors.text} />
+            </Pressable>
+          </HStack>
+          
+          {/* カロリー進捗カード */}
+          <Card variant="elevated" rounded my={4}>
+            <VStack space={4}>
+              <HStack justifyContent="space-between" alignItems="center">
+                <Heading size="md">カロリー進捗</Heading>
+                <Badge colorScheme={calorieStatus.color.split('.')[0]}>
+                  {calorieStatus.text}
+                </Badge>
+              </HStack>
+              
+              <Progress
+                value={Math.min((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100, 100)}
+                size="lg"
+                colorScheme={calorieStatus.color.split('.')[0]}
+                bg="gray.200"
+              />
+              
+              <HStack justifyContent="center" alignItems="baseline">
+                <Heading size="lg">{Math.round(totalNutrition.calories)}</Heading>
+                <Text color="gray.500" ml={1}> / {dailySummary?.goalCalories || 2000} kcal</Text>
+              </HStack>
+            </VStack>
+          </Card>
+          
+          {/* マクロ栄養素バランス */}
+          <Card variant="elevated" rounded mb={4}>
+            <VStack space={3}>
+              <Heading size="md">マクロ栄養素バランス</Heading>
+              <Text color="gray.500" mb={2}>栄養バランスを確認しましょう</Text>
+              
+              <VStack space={4}>
+                {/* タンパク質 */}
+                <VStack space={1}>
+                  <HStack justifyContent="space-between">
+                    <HStack alignItems="center" space={2}>
+                      <Box bg="primary.100" p={1} borderRadius="md">
+                        <Ionicons name="fitness-outline" size={16} color={Colors.primary} />
+                      </Box>
+                      <Text fontWeight="medium">タンパク質</Text>
+                    </HStack>
+                    <Text>{Math.round(macroBalance.proteinGrams)}g ({Math.round(macroBalance.proteinPercentage)}%)</Text>
+                  </HStack>
+                  <Progress 
+                    value={macroBalance.proteinPercentage} 
+                    size="xs"
+                    colorScheme="primary"
+                    bg="primary.100"
+                  />
+                </VStack>
+                
+                {/* 炭水化物 */}
+                <VStack space={1}>
+                  <HStack justifyContent="space-between">
+                    <HStack alignItems="center" space={2}>
+                      <Box bg="secondary.100" p={1} borderRadius="md">
+                        <Ionicons name="leaf-outline" size={16} color={Colors.secondary} />
+                      </Box>
+                      <Text fontWeight="medium">炭水化物</Text>
+                    </HStack>
+                    <Text>{Math.round(macroBalance.carbsGrams)}g ({Math.round(macroBalance.carbsPercentage)}%)</Text>
+                  </HStack>
+                  <Progress 
+                    value={macroBalance.carbsPercentage} 
+                    size="xs"
+                    colorScheme="secondary"
+                    bg="secondary.100"
+                  />
+                </VStack>
+                
+                {/* 脂質 */}
+                <VStack space={1}>
+                  <HStack justifyContent="space-between">
+                    <HStack alignItems="center" space={2}>
+                      <Box bg="yellow.100" p={1} borderRadius="md">
+                        <Ionicons name="water-outline" size={16} color={Colors.accent} />
+                      </Box>
+                      <Text fontWeight="medium">脂質</Text>
+                    </HStack>
+                    <Text>{Math.round(macroBalance.fatGrams)}g ({Math.round(macroBalance.fatPercentage)}%)</Text>
+                  </HStack>
+                  <Progress 
+                    value={macroBalance.fatPercentage} 
+                    size="xs"
+                    colorScheme="yellow"
+                    bg="yellow.100"
+                  />
+                </VStack>
+              </VStack>
+            </VStack>
+          </Card>
+          
+          {/* 今日の食事 */}
+          <Card variant="elevated" rounded mb={4}>
+            <VStack space={3}>
+              <HStack justifyContent="space-between" alignItems="center">
+                <Heading size="md">今日の食事</Heading>
+                <Button 
+                  title="履歴を見る" 
+                  variant="text" 
+                  size="sm" 
+                  onPress={handleViewHistory} 
                 />
-              </View>
-            </View>
-
-            <View style={styles.macroItem}>
-              <View style={styles.macroHeader}>
-                <View style={styles.macroLabelContainer}>
-                  <Icon name="carbs" size={16} color={Colors.secondary} />
-                  <Text style={styles.macroLabel}>炭水化物</Text>
-                </View>
-                <Text style={styles.macroValue}>
-                  {macroBalance.carbsGrams}g ({macroBalance.carbsPercentage}%)
-                </Text>
-              </View>
-              <View style={[styles.macroBar, { backgroundColor: Colors.secondarySoft }]}>
-                <View
-                  style={[
-                    styles.macroFill,
-                    { 
-                      width: `${macroBalance.carbsPercentage}%`,
-                      backgroundColor: Colors.secondary,
-                    }
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.macroItem}>
-              <View style={styles.macroHeader}>
-                <View style={styles.macroLabelContainer}>
-                  <Icon name="fat" size={16} color={Colors.accent} />
-                  <Text style={styles.macroLabel}>脂質</Text>
-                </View>
-                <Text style={styles.macroValue}>
-                  {macroBalance.fatGrams}g ({macroBalance.fatPercentage}%)
-                </Text>
-              </View>
-              <View style={[styles.macroBar, { backgroundColor: Colors.accentSoft }]}>
-                <View
-                  style={[
-                    styles.macroFill,
-                    { 
-                      width: `${macroBalance.fatPercentage}%`,
-                      backgroundColor: Colors.accent,
-                    }
-                  ]}
-                />
-              </View>
-            </View>
-          </View>
-        </ModernCard>
-
-        {/* 食事記録 */}
-        <ModernCard 
-          style={styles.mealsCard} 
-          variant="elevated"
-          title="今日の食事"
-          subtitle="記録された食事を確認しましょう"
-        >
-          <View style={styles.mealsHeader}>
-            <Button
-              title="履歴を見る"
-              onPress={handleViewHistory}
-              variant="text"
-              size="sm"
-              style={styles.historyButton}
-            />
-          </View>
-          {dailySummary?.meals.length === 0 ? (
-            <View style={styles.emptyMeals}>
-              <Text style={styles.emptyMealsText}>
-                まだ食事記録がありません
-              </Text>
-              <Text style={styles.emptyMealsSubtext}>
-                下のボタンから食事を追加しましょう
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.mealsList}>
-              {dailySummary?.meals.map((meal) => (
-                <View key={meal.id} style={styles.mealItem}>
-                  <View style={styles.mealInfo}>
-                    <Text style={styles.mealName}>{meal.foodName}</Text>
-                    <Text style={styles.mealAmount}>{meal.amount}g</Text>
-                  </View>
-                  <View style={styles.mealCaloriesContainer}>
-                    <Text style={styles.mealCalories}>{Math.round(meal.calories)}</Text>
-                    <Text style={styles.mealCaloriesUnit}>kcal</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-        </ModernCard>
-
-        {/* アクションボタン */}
-        <View style={styles.actionButtons}>
-          <Button
-            title="朝食を追加"
-            onPress={() => handleAddMeal('breakfast')}
-            variant="primary"
-            style={styles.actionButton}
-            rounded
-            icon={<Icon name="breakfast" size={20} color={Colors.textOnPrimary} />}
-          />
-          <Button
-            title="昼食を追加"
-            onPress={() => handleAddMeal('lunch')}
-            variant="primary"
-            style={styles.actionButton}
-            rounded
-            icon={<Icon name="lunch" size={20} color={Colors.textOnPrimary} />}
-          />
-          <Button
-            title="夕食を追加"
-            onPress={() => handleAddMeal('dinner')}
-            variant="primary"
-            style={styles.actionButton}
-            rounded
-            icon={<Icon name="dinner" size={20} color={Colors.textOnPrimary} />}
-          />
-          <Button
-            title="間食を追加"
-            onPress={() => handleAddMeal('snack')}
-            variant="filled"
-            style={styles.actionButton}
-            rounded
-            icon={<Icon name="snack" size={20} color={Colors.primary} />}
-          />
-        </View>
+              </HStack>
+              
+              {(!dailySummary || dailySummary.meals.length === 0) ? (
+                <Center py={10}>
+                  <Text color="gray.500" fontWeight="medium" mb={2}>
+                    まだ食事記録がありません
+                  </Text>
+                  <Text color="gray.400" textAlign="center">
+                    下のボタンから食事を追加しましょう
+                  </Text>
+                </Center>
+              ) : (
+                <VStack space={2} mt={2}>
+                  {dailySummary.meals.map((meal) => (
+                    <HStack 
+                      key={meal.id} 
+                      bg="gray.50" 
+                      p={3} 
+                      borderRadius="lg" 
+                      justifyContent="space-between"
+                      borderWidth={1}
+                      borderColor="gray.200"
+                    >
+                      <VStack>
+                        <Text fontWeight="semibold">{meal.foodName}</Text>
+                        <Text color="gray.500" fontSize="xs">{meal.amount}g</Text>
+                      </VStack>
+                      <VStack alignItems="flex-end">
+                        <Text color="primary.500" fontWeight="bold">
+                          {Math.round(meal.calories)}
+                        </Text>
+                        <Text color="gray.500" fontSize="xs">kcal</Text>
+                      </VStack>
+                    </HStack>
+                  ))}
+                </VStack>
+              )}
+            </VStack>
+          </Card>
+          
+          {/* アクションボタン */}
+          <VStack space={3} mb={6}>
+            <HStack space={2}>
+              <Button
+                title="朝食を追加"
+                onPress={() => handleAddMeal('breakfast')}
+                variant="primary"
+                flex={1}
+                leftIcon={<Ionicons name="sunny-outline" size={20} color="white" />}
+              />
+              <Button
+                title="昼食を追加"
+                onPress={() => handleAddMeal('lunch')}
+                variant="primary"
+                flex={1}
+                leftIcon={<Ionicons name="restaurant-outline" size={20} color="white" />}
+              />
+            </HStack>
+            
+            <HStack space={2}>
+              <Button
+                title="夕食を追加"
+                onPress={() => handleAddMeal('dinner')}
+                variant="primary"
+                flex={1}
+                leftIcon={<Ionicons name="moon-outline" size={20} color="white" />}
+              />
+              <Button
+                title="間食を追加"
+                onPress={() => handleAddMeal('snack')}
+                variant="outline"
+                flex={1}
+                leftIcon={<Ionicons name="cafe-outline" size={20} color={Colors.primary} />}
+              />
+            </HStack>
+          </VStack>
+        </Box>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  
-  scrollView: {
-    flex: 1,
-  },
-  
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.base,
-  },
-  
-  loadingText: {
-    ...TextStyles.body,
-    color: Colors.textSecondary,
-  },
-  
-  headerCard: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  
-  headerContent: {
-    flex: 1,
-    marginRight: Spacing.base,
-  },
-  
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
-  },
-  
-  title: {
-    ...TextStyles.h1,
-    color: Colors.textOnPrimary,
-    marginLeft: Spacing.sm,
-    lineHeight: 40,
-  },
-  
-  subtitle: {
-    ...TextStyles.body,
-    color: Colors.textOnPrimary,
-    lineHeight: 22,
-    opacity: 0.9,
-  },
-  
-  settingsButton: {
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.base,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  
-  progressContainer: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  
-  macroCard: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  
-  macroContainer: {
-    gap: Spacing.lg,
-  },
-  
-  macroItem: {
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-  },
-  
-  macroHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  
-  macroLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  
-  macroBar: {
-    height: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: Colors.surfaceVariant,
-  },
-  
-  macroFill: {
-    height: '100%',
-    borderRadius: 8,
-  },
-  
-  macroLabel: {
-    ...TextStyles.label,
-    color: Colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  
-  macroValue: {
-    ...TextStyles.bodySmall,
-    color: Colors.textSecondary,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  
-  mealsCard: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  
-  mealsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  
-  historyButton: {
-    alignSelf: 'flex-end',
-  },
-  
-  emptyMeals: {
-    alignItems: 'center',
-    paddingVertical: Spacing['3xl'],
-    paddingHorizontal: Spacing.lg,
-  },
-  
-  emptyMealsText: {
-    ...TextStyles.bodyLarge,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  
-  emptyMealsSubtext: {
-    ...TextStyles.body,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  
-  mealsList: {
-    gap: Spacing.sm,
-  },
-  
-  mealItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.base,
-    paddingHorizontal: Spacing.base,
-    backgroundColor: Colors.surfaceVariant,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  
-  mealInfo: {
-    flex: 1,
-    marginRight: Spacing.sm,
-  },
-  
-  mealName: {
-    ...TextStyles.body,
-    color: Colors.text,
-    marginBottom: Spacing.xs,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
-  
-  mealAmount: {
-    ...TextStyles.caption,
-    color: Colors.textSecondary,
-    fontSize: 12,
-  },
-  
-  mealCaloriesContainer: {
-    alignItems: 'flex-end',
-    minWidth: 60,
-  },
-  
-  mealCalories: {
-    ...TextStyles.h4,
-    color: Colors.primary,
-    fontWeight: '800',
-    fontSize: 18,
-  },
-  
-  mealCaloriesUnit: {
-    ...TextStyles.caption,
-    color: Colors.textSecondary,
-    marginTop: -2,
-    fontSize: 11,
-  },
-  
-  actionButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing['2xl'],
-    gap: Spacing.sm,
-  },
-  
-  actionButton: {
-    flex: 1,
-    minWidth: '48%',
-    marginBottom: Spacing.sm,
-  },
-  
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.xl,
-    gap: Spacing.base,
-  },
-  
-  errorText: {
-    ...TextStyles.h3,
-    color: Colors.error,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-  
-  errorSubtext: {
-    ...TextStyles.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.lg,
-  },
-  
-  retryButton: {
-    minWidth: 120,
-  },
-});
