@@ -55,7 +55,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     try {
       setSaving(true);
       await databaseService.updateUserSettings(settings);
-      Alert.alert('成功', '設定を保存しました');
+      Alert.alert(
+        '成功',
+        '設定を保存しました',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // ホーム画面に戻る際、再読み込みフラグを渡す
+              navigation.navigate('Home', { refresh: Date.now() });
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('設定の保存に失敗しました:', error);
       Alert.alert('エラー', '設定の保存に失敗しました');
@@ -67,17 +79,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const handleCalculateGoal = () => {
     const recommended = calculateRecommendedCalories(settings);
     setSettings(prev => ({ ...prev, dailyCalorieGoal: recommended }));
-  };
-
-  const getActivityLevelLabel = (level: UserSettings['activityLevel']) => {
-    const labels = {
-      sedentary: '座り仕事中心',
-      light: '軽い運動',
-      moderate: '適度な運動',
-      active: '活発な運動',
-      very_active: '非常に活発な運動',
-    };
-    return labels[level];
   };
 
   const getGenderLabel = (gender: UserSettings['gender']) => {
@@ -106,32 +107,54 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         <Card style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>基本情報</Text>
           
-          <Input
-            label="体重 (kg)"
-            value={settings.weight.toString()}
-            onChangeText={(text) => setSettings(prev => ({ ...prev, weight: parseFloat(text) || 0 }))}
-            keyboardType="numeric"
-            style={styles.input}
-          />
-          
-          <Input
-            label="身長 (cm)"
-            value={settings.height.toString()}
-            onChangeText={(text) => setSettings(prev => ({ ...prev, height: parseFloat(text) || 0 }))}
-            keyboardType="numeric"
-            style={styles.input}
-          />
-          
-          <Input
-            label="年齢 (歳)"
-            value={settings.age.toString()}
-            onChangeText={(text) => setSettings(prev => ({ ...prev, age: parseInt(text) || 0 }))}
-            keyboardType="numeric"
-            style={styles.input}
-          />
+          <View style={styles.basicInfoContainer}>
+            <Input
+              label="体重 (kg)"
+              value={settings.weight.toString()}
+              onChangeText={(text) => setSettings(prev => ({ ...prev, weight: parseFloat(text) || 0 }))}
+              keyboardType="numeric"
+              style={styles.basicInfoInput}
+            />
+            
+            <Input
+              label="身長 (cm)"
+              value={settings.height.toString()}
+              onChangeText={(text) => setSettings(prev => ({ ...prev, height: parseFloat(text) || 0 }))}
+              keyboardType="numeric"
+              style={styles.basicInfoInput}
+            />
+            
+            <Input
+              label="年齢 (歳)"
+              value={settings.age.toString()}
+              onChangeText={(text) => setSettings(prev => ({ ...prev, age: parseInt(text) || 0 }))}
+              keyboardType="numeric"
+              style={styles.basicInfoInput}
+            />
+          </View>
         </Card>
 
-        {/* カロリー目標 */}
+        {/* 性別 */}
+        <Card style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>性別</Text>
+          
+          <View style={styles.genderContainer}>
+            <Button
+              title="男性"
+              onPress={() => setSettings(prev => ({ ...prev, gender: 'male' }))}
+              variant={settings.gender === 'male' ? 'primary' : 'outline'}
+              style={styles.genderButton}
+            />
+            <Button
+              title="女性"
+              onPress={() => setSettings(prev => ({ ...prev, gender: 'female' }))}
+              variant={settings.gender === 'female' ? 'primary' : 'outline'}
+              style={styles.genderButton}
+            />
+          </View>
+        </Card>
+
+                {/* カロリー目標 */}
         <Card style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>カロリー目標</Text>
           
@@ -153,41 +176,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Text style={styles.calculateNote}>
             現在の設定に基づいて推奨カロリーを計算します
           </Text>
-        </Card>
-
-        {/* 活動レベル */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>活動レベル</Text>
-          
-          {(['sedentary', 'light', 'moderate', 'active', 'very_active'] as const).map((level) => (
-            <Button
-              key={level}
-              title={getActivityLevelLabel(level)}
-              onPress={() => setSettings(prev => ({ ...prev, activityLevel: level }))}
-              variant={settings.activityLevel === level ? 'primary' : 'outline'}
-              style={styles.activityButton}
-            />
-          ))}
-        </Card>
-
-        {/* 性別 */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>性別</Text>
-          
-          <View style={styles.genderContainer}>
-            <Button
-              title="男性"
-              onPress={() => setSettings(prev => ({ ...prev, gender: 'male' }))}
-              variant={settings.gender === 'male' ? 'primary' : 'outline'}
-              style={styles.genderButton}
-            />
-            <Button
-              title="女性"
-              onPress={() => setSettings(prev => ({ ...prev, gender: 'female' }))}
-              variant={settings.gender === 'female' ? 'primary' : 'outline'}
-              style={styles.genderButton}
-            />
-          </View>
         </Card>
 
         {/* 保存ボタン */}
@@ -254,6 +242,15 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.base,
   },
   
+  basicInfoContainer: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  
+  basicInfoInput: {
+    flex: 1,
+  },
+  
   input: {
     marginBottom: Spacing.base,
   },
@@ -266,10 +263,6 @@ const styles = StyleSheet.create({
     ...TextStyles.caption,
     color: Colors.textSecondary,
     textAlign: 'center',
-  },
-  
-  activityButton: {
-    marginBottom: Spacing.sm,
   },
   
   genderContainer: {

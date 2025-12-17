@@ -38,7 +38,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
       padding="base"
     >
       <View style={styles.content}>
-        <View style={styles.header}>
+        <View style={styles.leftContent}>
           <Text style={styles.name} numberOfLines={2}>
             {food.name}
           </Text>
@@ -46,7 +46,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({
             {food.category}
           </Text>
         </View>
-        
+    
         {showNutrition && (
           <View style={styles.nutrition}>
             <View style={styles.nutritionItem}>
@@ -97,7 +97,13 @@ const styles = StyleSheet.create({
   },
   
   content: {
-    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  
+  leftContent: {
+    flex: 1,
   },
   
   header: {
@@ -125,37 +131,30 @@ const styles = StyleSheet.create({
   
   nutrition: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
+    gap: Spacing.sm,
   },
   
   nutritionItem: {
     alignItems: 'center',
-    flex: 1,
-    paddingVertical: Spacing.xs,
   },
   
   nutritionValue: {
     ...TextStyles.body,
     fontWeight: '600',
     color: Colors.text,
-    marginBottom: Spacing.xs,
+    fontSize: 12,
   },
   
   nutritionLabel: {
     ...TextStyles.caption,
     color: Colors.textSecondary,
     textAlign: 'center',
-    fontSize: 11,
+    fontSize: 10,
   },
   
   image: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surfaceVariant,
   },

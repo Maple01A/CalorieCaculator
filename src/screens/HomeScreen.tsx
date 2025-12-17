@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Box,
   ScrollView,
@@ -11,7 +12,8 @@ import {
   Pressable,
   useToast,
   Progress,
-  Badge
+  Badge,
+  Divider
 } from 'native-base';
 import { RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,9 +27,10 @@ import { calculateTotalNutrition, calculateMacroBalance } from '../utils/calorie
 
 interface HomeScreenProps {
   navigation: any;
+  route?: any;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => {
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,6 +38,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const toast = useToast();
 
   const today = new Date().toISOString().split('T')[0];
+
+  // 画面がフォーカスされた時、またはパラメータが変更された時にデータを再読み込み
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDailySummary();
+    }, [route?.params?.refresh])
+  );
 
   useEffect(() => {
     loadDailySummary();
@@ -70,6 +80,69 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleViewSettings = () => {
     navigation.navigate('Settings');
+  };
+
+  const handleDeleteMeal = async (mealId: string) => {
+    try {
+      await databaseService.deleteMealRecord(mealId);
+      await loadDailySummary();
+      toast.show({
+        description: '食事記録を削除しました',
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('食事記録の削除に失敗しました:', error);
+      toast.show({
+        description: '削除に失敗しました',
+        duration: 2000,
+        status: 'error',
+      });
+    }
+  };
+
+  const getMealTypeLabel = (type: MealRecord['mealType']) => {
+    const labels = {
+      breakfast: '朝食',
+      lunch: '昼食',
+      dinner: '夕食',
+      snack: '間食',
+    };
+    return labels[type];
+  };
+
+  const getMealTypeIcon = (type: MealRecord['mealType']) => {
+    const icons = {
+      breakfast: 'sunny',
+      lunch: 'restaurant',
+      dinner: 'moon',
+      snack: 'cafe',
+    };
+    return icons[type];
+  };
+
+  const getMealTypeColor = (type: MealRecord['mealType']) => {
+    const colors = {
+      breakfast: 'orange.500',
+      lunch: 'blue.500',
+      dinner: 'purple.500',
+      snack: 'green.500',
+    };
+    return colors[type];
+  };
+
+  const groupMealsByType = (meals: MealRecord[]) => {
+    const grouped: { [key: string]: MealRecord[] } = {
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snack: [],
+    };
+
+    meals.forEach(meal => {
+      grouped[meal.mealType].push(meal);
+    });
+
+    return grouped;
   };
 
   if (loading) {
@@ -121,6 +194,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const calorieStatus = getCalorieStatus();
+  const groupedMeals = dailySummary ? groupMealsByType(dailySummary.meals) : {};
+  const hasMeals = dailySummary && dailySummary.meals.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -235,58 +310,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </VStack>
             </VStack>
           </Card>
-          
-          {/* 今日の食事 */}
-          <Card variant="elevated" rounded mb={4}>
-            <VStack space={3}>
-              <HStack justifyContent="space-between" alignItems="center">
-                <Heading size="md">今日の食事</Heading>
-                <Button 
-                  title="履歴を見る" 
-                  variant="text" 
-                  size="sm" 
-                  onPress={handleViewHistory} 
-                />
-              </HStack>
-              
-              {(!dailySummary || dailySummary.meals.length === 0) ? (
-                <Center py={10}>
-                  <Text color="gray.500" fontWeight="medium" mb={2}>
-                    まだ食事記録がありません
-                  </Text>
-                  <Text color="gray.400" textAlign="center">
-                    下のボタンから食事を追加しましょう
-                  </Text>
-                </Center>
-              ) : (
-                <VStack space={2} mt={2}>
-                  {dailySummary.meals.map((meal) => (
-                    <HStack 
-                      key={meal.id} 
-                      bg="gray.50" 
-                      p={3} 
-                      borderRadius="lg" 
-                      justifyContent="space-between"
-                      borderWidth={1}
-                      borderColor="gray.200"
-                    >
-                      <VStack>
-                        <Text fontWeight="semibold">{meal.foodName}</Text>
-                        <Text color="gray.500" fontSize="xs">{meal.amount}g</Text>
-                      </VStack>
-                      <VStack alignItems="flex-end">
-                        <Text color="primary.500" fontWeight="bold">
-                          {Math.round(meal.calories)}
-                        </Text>
-                        <Text color="gray.500" fontSize="xs">kcal</Text>
-                      </VStack>
-                    </HStack>
-                  ))}
-                </VStack>
-              )}
-            </VStack>
-          </Card>
-          
+
           {/* アクションボタン */}
           <VStack space={3} mb={6}>
             <HStack space={2}>
@@ -324,6 +348,73 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </HStack>
           </VStack>
         </Box>
+
+          {/* 今日の食事記録 */}
+          {hasMeals && (
+            <Card variant="elevated" rounded mb={4}>
+              <VStack space={3}>
+                <HStack justifyContent="space-between" alignItems="center">
+                  <Heading size="md">今日の食事記録</Heading>
+                  <Text color="gray.500" fontSize="sm">{dailySummary.meals.length}件</Text>
+                </HStack>
+
+                <VStack space={4}>
+                  {Object.entries(groupedMeals).map(([mealType, meals]) => {
+                    if (meals.length === 0) return null;
+
+                    const mealTypeKey = mealType as MealRecord['mealType'];
+                    const mealTotal = meals.reduce((sum, meal) => sum + meal.calories, 0);
+
+                    return (
+                      <VStack key={mealType} space={2}>
+                        <HStack alignItems="center" space={2}>
+                          <Box bg={`${getMealTypeColor(mealTypeKey).split('.')[0]}.100`} p={2} borderRadius="md">
+                            <Ionicons 
+                              name={getMealTypeIcon(mealTypeKey) as any} 
+                              size={20} 
+                              color={Colors.primary} 
+                            />
+                          </Box>
+                          <VStack flex={1}>
+                            <Text fontWeight="bold" fontSize="md">{getMealTypeLabel(mealTypeKey)}</Text>
+                            <Text color="gray.500" fontSize="xs">{Math.round(mealTotal)} kcal</Text>
+                          </VStack>
+                        </HStack>
+
+                        <VStack space={2} ml={12}>
+                          {meals.map((meal, index) => (
+                            <HStack key={meal.id} justifyContent="space-between" alignItems="center">
+                              <VStack flex={1}>
+                                <Text fontSize="sm">{meal.foodName}</Text>
+                                <HStack space={2}>
+                                  <Text color="gray.500" fontSize="xs">{meal.amount}g</Text>
+                                  <Text color="gray.500" fontSize="xs">•</Text>
+                                  <Text color="gray.500" fontSize="xs">{Math.round(meal.calories)} kcal</Text>
+                                </HStack>
+                              </VStack>
+                              <Pressable 
+                                onPress={() => handleDeleteMeal(meal.id)}
+                                p={2}
+                                borderRadius="full"
+                                _pressed={{ bg: 'red.100' }}
+                              >
+                                <Ionicons name="trash-outline" size={18} color={Colors.error} />
+                              </Pressable>
+                            </HStack>
+                          ))}
+                        </VStack>
+
+                        {Object.keys(groupedMeals).indexOf(mealType) < Object.keys(groupedMeals).filter(key => groupedMeals[key as keyof typeof groupedMeals].length > 0).length - 1 && (
+                          <Divider my={1} />
+                        )}
+                      </VStack>
+                    );
+                  })}
+                </VStack>
+              </VStack>
+            </Card>
+          )}
+          
       </ScrollView>
     </SafeAreaView>
   );
