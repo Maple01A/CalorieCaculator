@@ -99,8 +99,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Text style={styles.title}>設定</Text>
-          <Text style={styles.subtitle}>カロリー目標と個人情報を設定</Text>
+          <Text style={styles.subtitle}>カロリー目標を設定しましょう</Text>
         </View>
 
         {/* 基本情報 */}

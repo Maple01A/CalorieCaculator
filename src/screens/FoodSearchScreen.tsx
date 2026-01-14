@@ -196,8 +196,7 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
-            <Text style={styles.title}>食品検索</Text>
-            <Text style={styles.subtitle}>食べた食品を検索して記録しましょう</Text>
+            <Text style={styles.subtitle}>食品のカロリーを確認しましょう</Text>
           </View>
         </View>
       </View>

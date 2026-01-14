@@ -286,13 +286,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>履歴</Text>
-          <Text style={styles.subtitle}>過去7日間の食事記録</Text>
+          <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
         </View>
 
         {/* 週間統計カード */}
         <Card style={styles.statsCard}>
-          <Text style={styles.sectionTitle}>週間統計</Text>
+          <Text style={styles.sectionTitle}>今週の統計</Text>
 
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
