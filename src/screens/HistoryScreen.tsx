@@ -3,18 +3,24 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   Alert,
   RefreshControl,
+  Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LineChart, BarChart } from 'react-native-chart-kit';
+import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { Card } from '../components/Card';
 import { Colors } from '../constants/colors';
-import { Spacing } from '../constants/spacing';
+import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
-import { DailySummary } from '../types';
+import { DailySummary, MealRecord } from '../types';
 import { calculateTotalNutrition } from '../utils/calorieCalculator';
+
+const screenWidth = Dimensions.get('window').width;
 
 interface HistoryScreenProps {
   navigation: any;
@@ -24,6 +30,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadHistory();
@@ -32,11 +39,11 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      // 過去7日分のデータを取得
       const summaries: DailySummary[] = [];
       const today = new Date();
       
-      for (let i = 0; i < 7; i++) {
+      // 過去7日分のデータを取得（新しい順）
+      for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateString = date.toISOString().split('T')[0];
@@ -45,7 +52,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           const summary = await databaseService.getDailySummary(dateString);
           summaries.push(summary);
         } catch (error) {
-          // データがない日は空のサマリーを作成
           summaries.push({
             date: dateString,
             totalCalories: 0,
@@ -73,92 +79,186 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const formatDate = (dateString: string) => {
+  const toggleDateExpanded = (date: string) => {
+    const newExpanded = new Set(expandedDates);
+    if (newExpanded.has(date)) {
+      newExpanded.delete(date);
+    } else {
+      newExpanded.add(date);
+    }
+    setExpandedDates(newExpanded);
+  };
+
+  const formatDateShort = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (dateString === today.toISOString().split('T')[0]) {
-      return '今日';
-    } else if (dateString === yesterday.toISOString().split('T')[0]) {
-      return '昨日';
-    } else {
-      return date.toLocaleDateString('ja-JP', {
-        month: 'short',
-        day: 'numeric',
-        weekday: 'short',
-      });
-    }
-  };
-
-  const getCalorieStatus = (current: number, goal: number) => {
-    const percentage = (current / goal) * 100;
-    if (percentage < 90) return { status: 'under', color: Colors.warning };
-    if (percentage <= 110) return { status: 'on_target', color: Colors.success };
-    return { status: 'over', color: Colors.error };
-  };
-
-  const renderDayItem = ({ item }: { item: DailySummary }) => {
-    const totalNutrition = calculateTotalNutrition(item.meals);
-    const calorieStatus = getCalorieStatus(totalNutrition.calories, item.goalCalories);
+    if (diffDays === 0) return '今日';
+    if (diffDays === 1) return '昨日';
     
-    return (
-      <Card style={styles.dayCard}>
-        <View style={styles.dayHeader}>
-          <Text style={styles.dayDate}>{formatDate(item.date)}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: calorieStatus.color }]}>
-            <Text style={styles.statusText}>
-              {Math.round((totalNutrition.calories / item.goalCalories) * 100)}%
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.nutritionSummary}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(totalNutrition.calories)}</Text>
-            <Text style={styles.nutritionLabel}>kcal</Text>
-          </View>
-          
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(totalNutrition.protein)}g</Text>
-            <Text style={styles.nutritionLabel}>タンパク質</Text>
-          </View>
-          
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(totalNutrition.carbs)}g</Text>
-            <Text style={styles.nutritionLabel}>炭水化物</Text>
-          </View>
-          
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(totalNutrition.fat)}g</Text>
-            <Text style={styles.nutritionLabel}>脂質</Text>
-          </View>
-        </View>
-        
-        <View style={styles.mealsSummary}>
-          <Text style={styles.mealsCount}>
-            {item.meals.length}件の食事記録
-          </Text>
-          {item.meals.length > 0 && (
-            <Text style={styles.mealsPreview}>
-              {item.meals.slice(0, 3).map(meal => meal.foodName).join('、')}
-              {item.meals.length > 3 && '...'}
-            </Text>
-          )}
-        </View>
-      </Card>
-    );
+    return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>履歴がありません</Text>
-      <Text style={styles.emptySubtext}>
-        食事記録を追加すると、ここに履歴が表示されます
-      </Text>
-    </View>
-  );
+  const formatDateFull = (dateString: string) => {
+    const date = new Date(dateString);
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    return `${date.getMonth() + 1}月${date.getDate()}日 (${days[date.getDay()]})`;
+  };
+
+  const getMealTypeLabel = (type: MealRecord['mealType']) => {
+    const labels = {
+      breakfast: '朝食',
+      lunch: '昼食',
+      dinner: '夕食',
+      snack: '間食',
+    };
+    return labels[type];
+  };
+
+  const getMealTypeIcon = (type: MealRecord['mealType']) => {
+    const icons = {
+      breakfast: 'sunny',
+      lunch: 'restaurant',
+      dinner: 'moon',
+      snack: 'cafe',
+    };
+    return icons[type];
+  };
+
+  const groupMealsByType = (meals: MealRecord[]) => {
+    const grouped: { [key: string]: MealRecord[] } = {
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snack: [],
+    };
+
+    meals.forEach(meal => {
+      grouped[meal.mealType].push(meal);
+    });
+
+    return grouped;
+  };
+
+  // カロリーグラフのデータ
+  const getCalorieChartData = () => {
+    const labels = dailySummaries.map(s => formatDateShort(s.date));
+    const data = dailySummaries.map(s => {
+      const total = calculateTotalNutrition(s.meals);
+      return total.calories;
+    });
+    const goalData = dailySummaries.map(s => s.goalCalories);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data: data.length > 0 ? data : [0],
+          color: (opacity = 1) => Colors.primary,
+          strokeWidth: 3,
+        },
+        {
+          data: goalData.length > 0 ? goalData : [0],
+          color: (opacity = 1) => Colors.textDisabled,
+          strokeWidth: 2,
+          withDots: false,
+        },
+      ],
+      legend: ['摂取カロリー', '目標'],
+    };
+  };
+
+  // 栄養素バランスグラフのデータ
+  const getNutritionChartData = () => {
+    // 週間の合計データを使用
+    const totalProtein = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.protein;
+    }, 0);
+
+    const totalCarbs = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.carbs;
+    }, 0);
+
+    const totalFat = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.fat;
+    }, 0);
+
+    return {
+      labels: ['タンパク質', '炭水化物', '脂質'],
+      datasets: [
+        {
+          data: [
+            totalProtein || 0.1,
+            totalCarbs || 0.1,
+            totalFat || 0.1,
+          ],
+        },
+      ],
+    };
+  };
+
+  // 週間統計データ
+  const getWeeklyStats = () => {
+    const totalCalories = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.calories;
+    }, 0);
+
+    const totalProtein = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.protein;
+    }, 0);
+
+    const totalCarbs = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.carbs;
+    }, 0);
+
+    const totalFat = dailySummaries.reduce((sum, s) => {
+      const nutrition = calculateTotalNutrition(s.meals);
+      return sum + nutrition.fat;
+    }, 0);
+
+    const daysWithRecords = dailySummaries.filter(s => s.meals.length > 0).length;
+    const avgCalories = daysWithRecords > 0 ? totalCalories / daysWithRecords : 0;
+
+    return {
+      avgCalories: Math.round(avgCalories),
+      totalProtein: Math.round(totalProtein),
+      totalCarbs: Math.round(totalCarbs),
+      totalFat: Math.round(totalFat),
+      daysWithRecords,
+    };
+  };
+
+  const chartConfig = {
+    backgroundGradientFrom: Colors.surface,
+    backgroundGradientTo: Colors.surface,
+    color: (opacity = 1) => Colors.primary,
+    strokeWidth: 2,
+    barPercentage: 0.7,
+    useShadowColorFromDataset: false,
+    decimalPlaces: 0,
+    propsForLabels: {
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: '',
+      stroke: Colors.borderLight,
+      strokeWidth: 1,
+    },
+  };
+
+  const barChartConfig = {
+    ...chartConfig,
+    fillShadowGradient: Colors.primary,
+    fillShadowGradientOpacity: 1,
+  };
 
   if (loading) {
     return (
@@ -170,19 +270,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     );
   }
 
+  const weeklyStats = getWeeklyStats();
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>履歴</Text>
-        <Text style={styles.subtitle}>過去7日間の食事記録</Text>
-      </View>
-
-      <FlatList
-        data={dailySummaries}
-        renderItem={renderDayItem}
-        keyExtractor={(item) => item.date}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
+      <ScrollView
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -191,8 +284,221 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             tintColor={Colors.primary}
           />
         }
-        ListEmptyComponent={renderEmptyState}
-      />
+      >
+        <View style={styles.header}>
+          <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
+        </View>
+
+        {/* 週間統計カード */}
+        <Card style={styles.statsCard}>
+          <Text style={styles.sectionTitle}>今週の統計</Text>
+
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.primary }]}>
+                {weeklyStats.totalProtein}g
+              </Text>
+              <Text style={styles.statLabel}>タンパク質</Text>
+            </View>
+            
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.secondary }]}>
+                {weeklyStats.totalCarbs}g
+              </Text>
+              <Text style={styles.statLabel}>炭水化物</Text>
+            </View>
+            
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.accent }]}>
+                {weeklyStats.totalFat}g
+              </Text>
+              <Text style={styles.statLabel}>脂質</Text>
+            </View>
+          </View>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{weeklyStats.avgCalories}</Text>
+              <Text style={styles.statLabel}>平均カロリー</Text>
+            </View>
+            
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{weeklyStats.daysWithRecords}</Text>
+              <Text style={styles.statLabel}>記録日数</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* カロリー推移グラフ */}
+        <Card style={styles.chartCard}>
+          <Text style={styles.sectionTitle}>今週のカロリー推移</Text>
+          <Text style={styles.chartSubtitle}>過去7日間の摂取カロリーと目標</Text>
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <LineChart
+              data={getCalorieChartData()}
+              width={Math.max(screenWidth - 80, 400)}
+              height={220}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+              withInnerLines={true}
+              withOuterLines={true}
+              withVerticalLines={true}
+              withHorizontalLines={true}
+              withVerticalLabels={true}
+              withHorizontalLabels={true}
+              fromZero
+              segments={4}
+            />
+          </ScrollView>
+          
+          <View style={styles.legend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
+              <Text style={styles.legendText}>摂取カロリー</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.textDisabled }]} />
+              <Text style={styles.legendText}>目標</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* 栄養素バランスグラフ */}
+        <Card style={styles.chartCard}>
+          <Text style={styles.sectionTitle}>今週の栄養バランス</Text>
+          <Text style={styles.chartSubtitle}>三大栄養素の合計摂取量（グラム）</Text>
+          
+          <BarChart
+            data={getNutritionChartData()}
+            width={screenWidth - 80}
+            height={220}
+            yAxisLabel=""
+            yAxisSuffix="g"
+            chartConfig={{
+              ...barChartConfig,
+              color: (opacity = 1, index) => {
+                const colors = [Colors.primary, Colors.secondary, Colors.accent];
+                return colors[index || 0];
+              },
+            }}
+            style={styles.chart}
+            showValuesOnTopOfBars
+            fromZero
+          />
+        </Card>
+
+        {/* 日別詳細リスト */}
+        <Card style={styles.listCard}>
+          <Text style={styles.sectionTitle}>日別詳細</Text>
+          
+          {dailySummaries.map((summary, index) => {
+            const nutrition = calculateTotalNutrition(summary.meals);
+            const percentage = Math.round((nutrition.calories / summary.goalCalories) * 100);
+            const isExpanded = expandedDates.has(summary.date);
+            const groupedMeals = groupMealsByType(summary.meals);
+            
+            return (
+              <View key={summary.date}>
+                <TouchableOpacity
+                  style={styles.dayItem}
+                  onPress={() => toggleDateExpanded(summary.date)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.dayHeader}>
+                    <View style={styles.dayHeaderLeft}>
+                      <Text style={styles.dayDate}>
+                        {formatDateFull(summary.date)}
+                      </Text>
+                      {summary.meals.length > 0 && (
+                        <Text style={styles.dayMealsCount}>
+                          {summary.meals.length}件の記録
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.dayHeaderRight}>
+                      <View style={styles.dayStats}>
+                        <Text style={styles.dayCalories}>
+                          {Math.round(nutrition.calories)} kcal
+                        </Text>
+                        <Text
+                          style={[
+                            styles.dayPercentage,
+                            {
+                              color:
+                                percentage < 90
+                                  ? Colors.warning
+                                  : percentage <= 110
+                                  ? Colors.success
+                                  : Colors.error,
+                            },
+                          ]}
+                        >
+                          {percentage}%
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={20}
+                        color={Colors.textSecondary}
+                      />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* 展開された食事詳細 */}
+                {isExpanded && summary.meals.length > 0 && (
+                  <View style={styles.mealDetails}>
+                    {Object.entries(groupedMeals).map(([mealType, meals]) => {
+                      if (meals.length === 0) return null;
+
+                      const mealTypeKey = mealType as MealRecord['mealType'];
+                      const mealTotal = meals.reduce((sum, meal) => sum + meal.calories, 0);
+
+                      return (
+                        <View key={mealType} style={styles.mealTypeSection}>
+                          <View style={styles.mealTypeHeader}>
+                            <View style={styles.mealTypeIconContainer}>
+                              <Ionicons
+                                name={getMealTypeIcon(mealTypeKey) as any}
+                                size={18}
+                                color={Colors.primary}
+                              />
+                            </View>
+                            <Text style={styles.mealTypeLabel}>
+                              {getMealTypeLabel(mealTypeKey)}
+                            </Text>
+                            <Text style={styles.mealTypeCalories}>
+                              {Math.round(mealTotal)} kcal
+                            </Text>
+                          </View>
+
+                          {meals.map((meal) => (
+                            <View key={meal.id} style={styles.mealItem}>
+                              <View style={styles.mealItemContent}>
+                                <Text style={styles.mealItemName}>{meal.foodName}</Text>
+                                <View style={styles.mealItemDetails}>
+                                  <Text style={styles.mealItemDetail}>{meal.amount}g</Text>
+                                  <Text style={styles.mealItemDetail}>•</Text>
+                                  <Text style={styles.mealItemDetail}>
+                                    {Math.round(meal.calories)} kcal
+                                  </Text>
+                                </View>
+                              </View>
+                            </View>
+                          ))}
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+                
+                {index < dailySummaries.length - 1 && <View style={styles.divider} />}
+              </View>
+            );
+          })}
+        </Card>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -201,6 +507,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  
+  scrollView: {
+    flex: 1,
   },
   
   loadingContainer: {
@@ -230,97 +540,210 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   
-  listContainer: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
+  statsCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.base,
   },
   
-  dayCard: {
+  chartCard: {
+    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
+  },
+  
+  listCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  
+  sectionTitle: {
+    ...TextStyles.h3,
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+  
+  chartSubtitle: {
+    ...TextStyles.caption,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.base,
+  },
+  
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.base,
+    marginTop: Spacing.sm,
+  },
+  
+  statItem: {
+    flex: 1,
+    minWidth: '30%',
+    alignItems: 'center',
+    padding: Spacing.sm,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.lg,
+  },
+  
+  statValue: {
+    ...TextStyles.h3,
+    color: Colors.text,
+    fontWeight: '700',
+    marginBottom: Spacing.xs,
+  },
+  
+  statLabel: {
+    ...TextStyles.caption,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  
+  chart: {
+    marginVertical: Spacing.base,
+    borderRadius: BorderRadius.lg,
+  },
+  
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  
+  legendText: {
+    ...TextStyles.caption,
+    color: Colors.textSecondary,
+  },
+  
+  dayItem: {
+    paddingVertical: Spacing.base,
   },
   
   dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.base,
+  },
+
+  dayHeaderLeft: {
+    flex: 1,
+  },
+
+  dayHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   
   dayDate: {
-    ...TextStyles.h3,
+    ...TextStyles.body,
     color: Colors.text,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+
+  dayMealsCount: {
+    ...TextStyles.caption,
+    color: Colors.textSecondary,
   },
   
-  statusBadge: {
+  dayStats: {
+    alignItems: 'flex-end',
+  },
+  
+  dayCalories: {
+    ...TextStyles.body,
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+  
+  dayPercentage: {
+    ...TextStyles.caption,
+    fontWeight: '600',
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    borderRadius: 12,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.base,
   },
-  
-  statusText: {
-    ...TextStyles.caption,
-    color: Colors.textOnPrimary,
-    fontWeight: '600',
+
+  // 食事詳細
+  mealDetails: {
+    marginTop: Spacing.sm,
+    paddingLeft: Spacing.base,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primaryLight,
   },
-  
-  nutritionSummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+
+  mealTypeSection: {
     marginBottom: Spacing.base,
   },
-  
-  nutritionItem: {
+
+  mealTypeHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-  },
-  
-  nutritionValue: {
-    ...TextStyles.body,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: Spacing.xs,
-  },
-  
-  nutritionLabel: {
-    ...TextStyles.caption,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  
-  mealsSummary: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.sm,
-  },
-  
-  mealsCount: {
-    ...TextStyles.caption,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
-  },
-  
-  mealsPreview: {
-    ...TextStyles.caption,
-    color: Colors.text,
-  },
-  
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Spacing['4xl'],
-  },
-  
-  emptyText: {
-    ...TextStyles.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
+    gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
-  
-  emptySubtext: {
+
+  mealTypeIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.base,
+    backgroundColor: Colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealTypeLabel: {
+    ...TextStyles.body,
+    color: Colors.text,
+    fontWeight: '600',
+    flex: 1,
+  },
+
+  mealTypeCalories: {
     ...TextStyles.caption,
-    color: Colors.textDisabled,
-    textAlign: 'center',
+    color: Colors.textSecondary,
+  },
+
+  mealItem: {
+    paddingVertical: Spacing.xs,
+    paddingLeft: Spacing['4xl'],
+  },
+
+  mealItemContent: {
+    flex: 1,
+  },
+
+  mealItemName: {
+    ...TextStyles.body,
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+
+  mealItemDetails: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+
+  mealItemDetail: {
+    ...TextStyles.caption,
+    color: Colors.textSecondary,
+  },
+  
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    marginTop: Spacing.base,
   },
 });

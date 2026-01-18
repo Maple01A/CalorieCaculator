@@ -1,20 +1,21 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
-import { Spacing } from '../constants/spacing';
-import { TextStyles } from '../constants/typography';
+
 import { HomeScreen } from '../screens/HomeScreen';
 import { FoodSearchScreen } from '../screens/FoodSearchScreen';
 import { FoodDetailScreen } from '../screens/FoodDetailScreen';
+import { AddMealScreen } from '../screens/AddMealScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
-import { RootStackParamList, MainTabParamList } from '../types';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
-const Stack = createStackNavigator<RootStackParamList>();
+import { Colors } from '../constants/colors';
+import { TextStyles } from '../constants/typography';
+
+const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
 // メインタブナビゲーター
 const MainTabNavigator = () => {
@@ -44,8 +45,8 @@ const MainTabNavigator = () => {
           backgroundColor: Colors.surface,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          paddingBottom: Spacing.sm,
-          paddingTop: Spacing.sm,
+          paddingBottom: 10,
+          paddingTop: 10,
           height: 60,
         },
         tabBarLabelStyle: {
@@ -125,6 +126,13 @@ const RootStackNavigator = () => {
         component={FoodDetailScreen}
         options={{
           title: '食品詳細',
+        }}
+      />
+      <Stack.Screen
+        name="AddMeal"
+        component={AddMealScreen}
+        options={{
+          headerShown: false,
         }}
       />
     </Stack.Navigator>

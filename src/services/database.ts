@@ -344,6 +344,41 @@ class DatabaseService {
     await this.db.runAsync('DELETE FROM meal_records WHERE id = ?', [id]);
   }
 
+  // 食品の追加（カスタム食品）
+  async addCustomFood(food: Omit<Food, 'id'>): Promise<string> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    const id = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    await this.db.runAsync(
+      `INSERT INTO foods (id, name, calories_per_100g, protein, carbs, fat, category, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        food.name,
+        food.caloriesPer100g,
+        food.protein,
+        food.carbs,
+        food.fat,
+        food.category,
+        food.imageUrl || null
+      ]
+    );
+
+    return id;
+  }
+
+  // カテゴリ一覧の取得
+  async getFoodCategories(): Promise<string[]> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    const categories = await this.db.getAllAsync(
+      'SELECT DISTINCT category FROM foods ORDER BY category ASC'
+    );
+
+    return categories.map((cat: any) => cat.category);
+  }
+
   // データベースのクローズ
   async close(): Promise<void> {
     if (this.db) {

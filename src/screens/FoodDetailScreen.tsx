@@ -97,7 +97,6 @@ export const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({ navigation, 
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Text style={styles.title}>食品詳細</Text>
         </View>
 
         {/* 食品情報カード */}
@@ -106,36 +105,6 @@ export const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({ navigation, 
           showNutrition={true}
           style={styles.foodCard}
         />
-
-        {/* 量の入力 */}
-        <Card style={styles.inputCard}>
-          <Text style={styles.sectionTitle}>摂取量を入力</Text>
-          
-          <Input
-            label="量（グラム）"
-            placeholder="100"
-            value={amount}
-            onChangeText={handleAmountChange}
-            keyboardType="numeric"
-            style={styles.amountInput}
-          />
-
-          <View style={styles.mealTypeContainer}>
-            <Text style={styles.mealTypeLabel}>食事の種類</Text>
-            <View style={styles.mealTypeButtons}>
-              {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
-                <Button
-                  key={type}
-                  title={getMealTypeLabel(type)}
-                  onPress={() => setMealType(type)}
-                  variant={mealType === type ? 'primary' : 'outline'}
-                  size="sm"
-                  style={styles.mealTypeButton}
-                />
-              ))}
-            </View>
-          </View>
-        </Card>
 
         {/* 計算結果 */}
         <Card style={styles.nutritionCard}>
@@ -170,18 +139,7 @@ export const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({ navigation, 
               <Text style={styles.nutritionLabel}>脂質</Text>
             </View>
           </View>
-        </Card>
-
-        {/* 追加ボタン */}
-        <View style={styles.addButtonContainer}>
-          <Button
-            title="食事記録に追加"
-            onPress={handleAddMeal}
-            variant="primary"
-            size="lg"
-            style={styles.addButton}
-          />
-        </View>
+        </Card> 
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,17 +1,14 @@
 import React from 'react';
 import {
-  View,
-  StyleSheet,
-  ViewStyle,
-  TouchableOpacity,
-} from 'react-native';
+  Box,
+  IBoxProps,
+  Pressable
+} from 'native-base';
 import { Colors } from '../constants/colors';
-import { Spacing, BorderRadius, Shadows } from '../constants/spacing';
 
-interface CardProps {
+interface CardProps extends IBoxProps {
   children: React.ReactNode;
   onPress?: () => void;
-  style?: ViewStyle;
   padding?: 'sm' | 'base' | 'lg' | 'xl';
   variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'glass';
   rounded?: boolean;
@@ -20,88 +17,78 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({
   children,
   onPress,
-  style,
   padding = 'base',
   variant = 'default',
   rounded = false,
+  ...props
 }) => {
-  const cardStyle = [
-    styles.base,
-    styles[variant],
-    styles[`${padding}Padding`],
-    rounded && styles.rounded,
-    style,
-  ];
+  // パディングをNativeBaseの値に変換
+  const getPadding = () => {
+    switch (padding) {
+      case 'sm': return 3;
+      case 'base': return 4;
+      case 'lg': return 5;
+      case 'xl': return 6;
+      default: return 4;
+    }
+  };
+
+  // バリアントに基づくスタイル
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'default':
+        return {
+          bg: 'white',
+          borderWidth: 1,
+          borderColor: 'gray.200',
+          shadow: 2
+        };
+      case 'elevated':
+        return {
+          bg: 'white',
+          shadow: 3
+        };
+      case 'outlined':
+        return {
+          bg: 'white',
+          borderWidth: 1,
+          borderColor: 'gray.300'
+        };
+      case 'filled':
+        return {
+          bg: 'gray.100'
+        };
+      case 'glass':
+        return {
+          bg: "rgba(255, 255, 255, 0.8)",
+          borderWidth: 1,
+          borderColor: "rgba(255, 255, 255, 0.2)",
+          shadow: 1
+        };
+      default:
+        return {};
+    }
+  };
+
+  const cardContent = (
+    <Box
+      p={getPadding()}
+      borderRadius={rounded ? "2xl" : "lg"}
+      overflow="hidden"
+      {...getVariantStyle()}
+      {...props}
+    >
+      {children}
+    </Box>
+  );
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={[cardStyle, { pointerEvents: 'auto' }]}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        {children}
-      </TouchableOpacity>
+      <Pressable onPress={onPress} _pressed={{ opacity: 0.7 }}>
+        {cardContent}
+      </Pressable>
     );
   }
 
-  return (
-    <View style={cardStyle}>
-      {children}
-    </View>
-  );
+  return cardContent;
 };
-
-const styles = StyleSheet.create({
-  base: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-  },
-  
-  // バリアント別スタイル
-  default: {
-    ...Shadows.card,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  elevated: {
-    ...Shadows.lg,
-    borderWidth: 0,
-  },
-  outlined: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadows.none,
-  },
-  filled: {
-    backgroundColor: Colors.surfaceVariant,
-    ...Shadows.none,
-    borderWidth: 0,
-  },
-  glass: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    ...Shadows.sm,
-  },
-  
-  // パディング別スタイル
-  smPadding: {
-    padding: Spacing.sm,
-  },
-  basePadding: {
-    padding: Spacing.base,
-  },
-  lgPadding: {
-    padding: Spacing.lg,
-  },
-  xlPadding: {
-    padding: Spacing.xl,
-  },
-  
-  // 特別なスタイル
-  rounded: {
-    borderRadius: BorderRadius['2xl'],
-  },
-});
