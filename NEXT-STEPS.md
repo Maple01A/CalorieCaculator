@@ -1,17 +1,5 @@
 # 🚀 AWS移行 - 次のステップガイド
 
-## ✅ 完了した作業
-
-1. ✅ MySQL関連ファイルの削除
-2. ✅ AWS Lambda + DynamoDB用のバックエンド作成
-3. ✅ 認証機能の実装（JWT + bcrypt）
-4. ✅ serverless.ymlの設定
-5. ✅ DynamoDBテーブル設計（EmailIndexを含む）
-6. ✅ ログイン・ゲスト機能の実装
-7. ✅ ホーム画面にログイン状態表示
-8. ✅ 未使用コンポーネントの削除
-9. ✅ .gitignore設定の修正
-
 ## 📋 次のステップ
 
 ### ステップ1: 依存関係のインストール
@@ -132,14 +120,6 @@ EXPO_PUBLIC_API_URL=https://xxxxxxxxxx.execute-api.ap-northeast-1.amazonaws.com/
 
 ### ステップ7: フロントエンドのAPIクライアント更新
 
-✅ **完了しました！**
-
-更新内容：
-- ✅ `.env`ファイルに実際のAPI URLを設定
-- ✅ `apiClient.ts`を環境変数から読み込むように更新
-- ✅ API エンドポイントをバックエンドの実装に合わせて修正
-- ✅ `/api`プレフィックスを削除（AWS Lambdaでは不要）
-
 **API URL**: `https://lhin3a5hmb.execute-api.ap-northeast-1.amazonaws.com/dev`
 
 利用可能なAPIエンドポイント：
@@ -149,14 +129,6 @@ EXPO_PUBLIC_API_URL=https://xxxxxxxxxx.execute-api.ap-northeast-1.amazonaws.com/
 - 設定: `getSettings(userId)`, `updateSettings(userId, settings)`
 
 ### ステップ8: 動作確認
-
-✅ **ログインとゲスト機能を実装しました！**
-
-実装内容：
-- ✅ ゲストモードでアプリを試用可能
-- ✅ ログイン/新規登録機能
-- ✅ ゲストからアカウント作成への変換機能
-- ✅ 設定画面にアカウント情報表示
 
 ```bash
 # フロントエンドを起動

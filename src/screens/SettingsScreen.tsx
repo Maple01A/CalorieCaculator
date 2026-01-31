@@ -158,7 +158,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 <View style={styles.accountInfo}>
                   <Text style={styles.accountName}>
                     {currentUser.displayName}
-                    {isGuest && <Text style={styles.guestBadge}> (ゲスト)</Text>}
                   </Text>
                   {!isGuest && currentUser.email && (
                     <Text style={styles.accountEmail}>{currentUser.email}</Text>

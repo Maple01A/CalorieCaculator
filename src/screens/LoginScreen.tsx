@@ -201,31 +201,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* ゲストモードボタン */}
-          <Card style={styles.guestCard}>
-            <View style={styles.guestHeader}>
-              <Ionicons name="person-outline" size={24} color="#666" />
-              <Text style={styles.guestTitle}>ゲストとして利用</Text>
-            </View>
-            <Text style={styles.guestDescription}>
-              アカウントを作成せずにアプリを試すことができます。{"\n"}
-              後でアカウントを作成してデータを保存することも可能です。
-            </Text>
-            <Button
-              title="ゲストとして始める"
-              onPress={handleGuestMode}
-              variant="outline"
-              loading={loading}
-              leftIcon={<Ionicons name="arrow-forward" size={20} color="#007AFF" />}
-            />
-          </Card>
-
-          <View style={styles.noteContainer}>
-            <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
-            <Text style={styles.noteText}>
-              ログインしなくてもアプリは利用できます。ログインするとデータが複数のデバイスで同期されます。
-            </Text>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
