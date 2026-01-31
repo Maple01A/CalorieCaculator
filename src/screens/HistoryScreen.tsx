@@ -14,6 +14,7 @@ import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { Card } from '../components/Card';
+import { AnimatedBackground } from '../components/AnimatedBackground';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
@@ -273,20 +274,21 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const weeklyStats = getWeeklyStats();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[Colors.primary]}
-            tintColor={Colors.primary}
-          />
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
+    <AnimatedBackground variant="neutral">
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
+            />
+          }
+        >
+          <View style={styles.header}>
+            <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
         </View>
 
         {/* 週間統計カード */}
@@ -499,14 +501,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           })}
         </Card>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   
   scrollView: {

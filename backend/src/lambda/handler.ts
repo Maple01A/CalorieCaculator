@@ -1,0 +1,236 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+const FOODS_TABLE = process.env.FOODS_TABLE || 'CalorieCalculator-Foods';
+const MEALS_TABLE = process.env.MEALS_TABLE || 'CalorieCalculator-Meals';
+const USERS_TABLE = process.env.USERS_TABLE || 'CalorieCalculator-Users';
+
+// CORSヘッダー
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Content-Type': 'application/json',
+};
+
+// レスポンスヘルパー
+const response = (statusCode: number, body: any): APIGatewayProxyResult => ({
+  statusCode,
+  headers,
+  body: JSON.stringify(body),
+});
+
+// 食品検索
+export const searchFoods = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const query = event.queryStringParameters?.query || '';
+    
+    if (!query) {
+      return response(400, { error: '検索クエリが必要です' });
+    }
+
+    const result = await docClient.send(new ScanCommand({
+      TableName: FOODS_TABLE,
+      FilterExpression: 'contains(#name, :query)',
+      ExpressionAttributeNames: { '#name': 'name' },
+      ExpressionAttributeValues: { ':query': query },
+    }));
+
+    return response(200, { foods: result.Items || [] });
+  } catch (error) {
+    console.error('Error searching foods:', error);
+    return response(500, { error: '食品検索中にエラーが発生しました' });
+  }
+};
+
+// 食品詳細取得
+export const getFoodById = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const foodId = event.pathParameters?.id;
+    
+    if (!foodId) {
+      return response(400, { error: '食品IDが必要です' });
+    }
+
+    const result = await docClient.send(new GetCommand({
+      TableName: FOODS_TABLE,
+      Key: { id: foodId },
+    }));
+
+    if (!result.Item) {
+      return response(404, { error: '食品が見つかりません' });
+    }
+
+    return response(200, result.Item);
+  } catch (error) {
+    console.error('Error getting food:', error);
+    return response(500, { error: '食品取得中にエラーが発生しました' });
+  }
+};
+
+// 食事記録追加
+export const addMealRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const { userId, foodId, amount, mealType, timestamp } = body;
+
+    if (!userId || !foodId || !amount || !mealType) {
+      return response(400, { error: '必須フィールドが不足しています' });
+    }
+
+    const mealId = `${userId}-${Date.now()}`;
+    const mealRecord = {
+      id: mealId,
+      userId,
+      foodId,
+      amount,
+      mealType,
+      timestamp: timestamp || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    await docClient.send(new PutCommand({
+      TableName: MEALS_TABLE,
+      Item: mealRecord,
+    }));
+
+    return response(201, { id: mealId, message: '食事記録を追加しました' });
+  } catch (error) {
+    console.error('Error adding meal:', error);
+    return response(500, { error: '食事記録追加中にエラーが発生しました' });
+  }
+};
+
+// 日別サマリー取得
+export const getDailySummary = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = event.pathParameters?.userId;
+    const date = event.pathParameters?.date;
+
+    if (!userId || !date) {
+      return response(400, { error: 'ユーザーIDと日付が必要です' });
+    }
+
+    // その日の開始と終了のタイムスタンプ
+    const startOfDay = `${date}T00:00:00.000Z`;
+    const endOfDay = `${date}T23:59:59.999Z`;
+
+    const result = await docClient.send(new QueryCommand({
+      TableName: MEALS_TABLE,
+      IndexName: 'UserIdTimestampIndex',
+      KeyConditionExpression: 'userId = :userId AND #timestamp BETWEEN :start AND :end',
+      ExpressionAttributeNames: { '#timestamp': 'timestamp' },
+      ExpressionAttributeValues: {
+        ':userId': userId,
+        ':start': startOfDay,
+        ':end': endOfDay,
+      },
+    }));
+
+    const meals = result.Items || [];
+    
+    // カロリー合計を計算（食品データと結合が必要）
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+
+    for (const meal of meals) {
+      const foodResult = await docClient.send(new GetCommand({
+        TableName: FOODS_TABLE,
+        Key: { id: meal.foodId },
+      }));
+
+      if (foodResult.Item) {
+        const food = foodResult.Item;
+        const multiplier = meal.amount / 100;
+        totalCalories += food.caloriesPer100g * multiplier;
+        totalProtein += (food.protein || 0) * multiplier;
+        totalCarbs += (food.carbs || 0) * multiplier;
+        totalFat += (food.fat || 0) * multiplier;
+      }
+    }
+
+    return response(200, {
+      date,
+      meals,
+      summary: {
+        totalCalories: Math.round(totalCalories),
+        totalProtein: Math.round(totalProtein * 10) / 10,
+        totalCarbs: Math.round(totalCarbs * 10) / 10,
+        totalFat: Math.round(totalFat * 10) / 10,
+        mealCount: meals.length,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting daily summary:', error);
+    return response(500, { error: '日別サマリー取得中にエラーが発生しました' });
+  }
+};
+
+// ユーザー設定取得
+export const getUserSettings = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = event.pathParameters?.userId;
+
+    if (!userId) {
+      return response(400, { error: 'ユーザーIDが必要です' });
+    }
+
+    const result = await docClient.send(new GetCommand({
+      TableName: USERS_TABLE,
+      Key: { id: userId },
+    }));
+
+    if (!result.Item) {
+      // デフォルト設定を返す
+      return response(200, {
+        id: userId,
+        dailyCalorieGoal: 2000,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    return response(200, result.Item);
+  } catch (error) {
+    console.error('Error getting user settings:', error);
+    return response(500, { error: 'ユーザー設定取得中にエラーが発生しました' });
+  }
+};
+
+// ユーザー設定更新
+export const updateUserSettings = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = event.pathParameters?.userId;
+    const body = JSON.parse(event.body || '{}');
+
+    if (!userId) {
+      return response(400, { error: 'ユーザーIDが必要です' });
+    }
+
+    const settings = {
+      id: userId,
+      ...body,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await docClient.send(new PutCommand({
+      TableName: USERS_TABLE,
+      Item: settings,
+    }));
+
+    return response(200, { message: 'ユーザー設定を更新しました', settings });
+  } catch (error) {
+    console.error('Error updating user settings:', error);
+    return response(500, { error: 'ユーザー設定更新中にエラーが発生しました' });
+  }
+};
+
+// OPTIONSリクエスト処理
+export const options = async (): Promise<APIGatewayProxyResult> => {
+  return response(200, {});
+};

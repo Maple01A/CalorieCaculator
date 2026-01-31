@@ -18,8 +18,11 @@ import {
 import { RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { databaseService } from '../services/database';
+import { authService } from '../services/auth';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { AnimatedBackground } from '../components/AnimatedBackground';
+import { GlassCard } from '../components/GlassCard';
 import { Colors } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { DailySummary, MealRecord } from '../types';
@@ -35,6 +38,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [isGuest, setIsGuest] = useState(authService.isGuestMode());
   const toast = useToast();
 
   const today = new Date().toISOString().split('T')[0];
@@ -48,6 +53,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
 
   useEffect(() => {
     loadDailySummary();
+
+    // 認証状態の監視
+    const unsubscribe = authService.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      setIsGuest(authService.isGuestMode());
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const loadDailySummary = async () => {
@@ -80,6 +93,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
 
   const handleViewSettings = () => {
     navigation.navigate('Settings');
+  };
+
+  const handleLogin = () => {
+    navigation.navigate('Login');
   };
 
   const handleDeleteMeal = async (mealId: string) => {
@@ -198,54 +215,120 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
   const hasMeals = dailySummary && dailySummary.meals.length > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[Colors.primary]}
-            tintColor={Colors.primary}
-          />
-        }
-      >
-        <Box px={4} py={2}>
-          <HStack justifyContent="space-between" alignItems="center" mb={2}>
-            <VStack>
-              <Heading size="xl">カロリー計算</Heading>
-              <Text color="gray.500">今日の栄養摂取を管理しましょう</Text>
-            </VStack>
-            <Pressable onPress={handleViewSettings} p={2} bg="gray.100" borderRadius="full">
-              <Ionicons name="settings-outline" size={24} color={Colors.text} />
-            </Pressable>
-          </HStack>
-          
-          {/* カロリー進捗カード */}
-          <Card variant="elevated" rounded my={4}>
-            <VStack space={4}>
-              <HStack justifyContent="space-between" alignItems="center">
-                <Heading size="md">カロリー進捗</Heading>
-                <Badge colorScheme={calorieStatus.color.split('.')[0]}>
-                  {calorieStatus.text}
-                </Badge>
-              </HStack>
-              
-              <Progress
-                value={Math.min((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100, 100)}
-                size="lg"
-                colorScheme={calorieStatus.color.split('.')[0]}
-                bg="gray.200"
-              />
-              
-              <HStack justifyContent="center" alignItems="baseline">
-                <Heading size="lg">{Math.round(totalNutrition.calories)}</Heading>
-                <Text color="gray.500" ml={1}> / {dailySummary?.goalCalories || 2000} kcal</Text>
-              </HStack>
-            </VStack>
-          </Card>
+    <AnimatedBackground variant="primary">
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
+            />
+          }
+        >
+          <Box px={4} py={2}>
+            <HStack justifyContent="space-between" alignItems="center" mb={2}>
+              <VStack>
+                <Heading size="xl">カロリー計算</Heading>
+                <Text color="gray.500">今日の栄養摂取を管理しましょう</Text>
+              </VStack>
+              <Pressable onPress={handleViewSettings} p={2} bg="gray.100" borderRadius="full">
+                <Ionicons name="settings-outline" size={24} color={Colors.text} />
+              </Pressable>
+            </HStack>
+
+            {/* ログイン状態カード */}
+            {!currentUser && (
+              <GlassCard style={{ marginBottom: 16 }}>
+                <HStack space={3} alignItems="center">
+                  <Box bg="primary.100" p={3} borderRadius="full">
+                    <Ionicons name="person-outline" size={24} color={Colors.primary} />
+                  </Box>
+                  <VStack flex={1}>
+                    <Text fontWeight="bold" fontSize="md">ログインしてデータを保存</Text>
+                    <Text color="gray.500" fontSize="sm">複数のデバイスでデータを同期できます</Text>
+                  </VStack>
+                  <Pressable
+                    onPress={handleLogin}
+                    bg="primary.500"
+                    px={4}
+                    py={2}
+                    borderRadius="md"
+                    _pressed={{ bg: "primary.600" }}
+                  >
+                    <Text color="white" fontWeight="bold">ログイン</Text>
+                  </Pressable>
+                </HStack>
+              </GlassCard>
+            )}
+
+            {/* ゲストモード表示 */}
+            {currentUser && isGuest && (
+              <GlassCard style={{ marginBottom: 16 }}>
+                <HStack space={3} alignItems="center">
+                  <Box bg="warning.100" p={3} borderRadius="full">
+                    <Ionicons name="information-circle" size={24} color="orange" />
+                  </Box>
+                  <VStack flex={1}>
+                    <Text fontWeight="bold" fontSize="md">ゲストモード</Text>
+                    <Text color="gray.500" fontSize="sm">アカウント作成でデータを保存できます</Text>
+                  </VStack>
+                  <Pressable
+                    onPress={handleLogin}
+                    bg="warning.500"
+                    px={4}
+                    py={2}
+                    borderRadius="md"
+                    _pressed={{ bg: "warning.600" }}
+                  >
+                    <Text color="white" fontWeight="bold">作成</Text>
+                  </Pressable>
+                </HStack>
+              </GlassCard>
+            )}
+
+            {/* ログイン済み表示 */}
+            {currentUser && !isGuest && (
+              <GlassCard style={{ marginBottom: 16 }}>
+                <HStack space={3} alignItems="center">
+                  <Box bg="success.100" p={3} borderRadius="full">
+                    <Ionicons name="checkmark-circle" size={24} color="green" />
+                  </Box>
+                  <VStack flex={1}>
+                    <Text fontWeight="bold" fontSize="md">{currentUser.displayName}</Text>
+                    <Text color="gray.500" fontSize="sm">データは自動的に同期されます</Text>
+                  </VStack>
+                </HStack>
+              </GlassCard>
+            )}
+            
+            {/* カロリー進捗カード */}
+            <GlassCard style={{ marginVertical: 16 }}>
+              <VStack space={4}>
+                <HStack justifyContent="space-between" alignItems="center">
+                  <Heading size="md">カロリー進捗</Heading>
+                  <Badge colorScheme={calorieStatus.color.split('.')[0]}>
+                    {calorieStatus.text}
+                  </Badge>
+                </HStack>
+                
+                <Progress
+                  value={Math.min((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100, 100)}
+                  size="lg"
+                  colorScheme={calorieStatus.color.split('.')[0]}
+                  bg="gray.200"
+                />
+                
+                <HStack justifyContent="center" alignItems="baseline">
+                  <Heading size="lg">{Math.round(totalNutrition.calories)}</Heading>
+                  <Text color="gray.500" ml={1}> / {dailySummary?.goalCalories || 2000} kcal</Text>
+                </HStack>
+              </VStack>
+            </GlassCard>
           
           {/* マクロ栄養素バランス */}
-          <Card variant="elevated" rounded mb={4}>
+          <GlassCard style={{ marginBottom: 16 }}>
             <VStack space={3}>
               <Heading size="md">マクロ栄養素バランス</Heading>
               <Text color="gray.500" mb={2}>栄養バランスを確認しましょう</Text>
@@ -309,7 +392,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
                 </VStack>
               </VStack>
             </VStack>
-          </Card>
+          </GlassCard>
 
           {/* アクションボタン */}
           <VStack space={3} mb={6}>
@@ -347,11 +430,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
               />
             </HStack>
           </VStack>
-        </Box>
 
           {/* 今日の食事記録 */}
           {hasMeals && (
-            <Card variant="elevated" rounded mb={4}>
+            <GlassCard style={{ marginBottom: 16 }}>
               <VStack space={3}>
                 <HStack justifyContent="space-between" alignItems="center">
                   <Heading size="md">今日の食事記録</Heading>
@@ -412,10 +494,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
                   })}
                 </VStack>
               </VStack>
-            </Card>
+            </GlassCard>
           )}
-          
+        </Box>
       </ScrollView>
     </SafeAreaView>
-  );
+  </AnimatedBackground>
+);
 };
