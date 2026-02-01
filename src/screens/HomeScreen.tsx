@@ -15,7 +15,7 @@ import {
   Badge,
   Divider
 } from 'native-base';
-import { RefreshControl } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { databaseService } from '../services/database';
 import { authService } from '../services/auth';
@@ -27,6 +27,8 @@ import { Colors } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { DailySummary, MealRecord } from '../types';
 import { calculateTotalNutrition, calculateMacroBalance } from '../utils/calorieCalculator';
+import { useResponsive } from '../hooks/useResponsive';
+import { ResponsiveContainer, ResponsiveGrid } from '../components/ResponsiveContainer';
 
 interface HomeScreenProps {
   navigation: any;
@@ -41,6 +43,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const [isGuest, setIsGuest] = useState(authService.isGuestMode());
   const toast = useToast();
+  
+  // レスポンシブフック
+  const { isMobile, isTablet, isDesktop } = useResponsive();
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -227,14 +232,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
             />
           }
         >
-          <Box px={4} py={2}>
-            <HStack justifyContent="space-between" alignItems="center" mb={2}>
+          <ResponsiveContainer>
+            <HStack justifyContent="space-between" alignItems="center" mb={2} mt={2}>
               <VStack>
-                <Heading size="xl">カロリー計算</Heading>
-                <Text color="gray.500">今日の栄養摂取を管理しましょう</Text>
+                <Heading size={isDesktop ? "2xl" : "xl"}>カロリー計算</Heading>
+                <Text color="gray.500" fontSize={isDesktop ? "md" : "sm"}>
+                  今日の栄養摂取を管理しましょう
+                </Text>
               </VStack>
               <Pressable onPress={handleViewSettings} p={2} bg="gray.100" borderRadius="full">
-                <Ionicons name="settings-outline" size={24} color={Colors.text} />
+                <Ionicons name="settings-outline" size={isDesktop ? 28 : 24} color={Colors.text} />
               </Pressable>
             </HStack>
 
@@ -304,99 +311,197 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
             )}
             
             {/* カロリー進捗カード */}
-            <GlassCard style={{ marginVertical: 16 }}>
-              <VStack space={4}>
-                <HStack justifyContent="space-between" alignItems="center">
-                  <Heading size="md">カロリー進捗</Heading>
-                  <Badge colorScheme={calorieStatus.color.split('.')[0]}>
-                    {calorieStatus.text}
-                  </Badge>
-                </HStack>
-                
-                <Progress
-                  value={Math.min((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100, 100)}
-                  size="lg"
-                  colorScheme={calorieStatus.color.split('.')[0]}
-                  bg="gray.200"
-                />
-                
-                <HStack justifyContent="center" alignItems="baseline">
-                  <Heading size="lg">{Math.round(totalNutrition.calories)}</Heading>
-                  <Text color="gray.500" ml={1}> / {dailySummary?.goalCalories || 2000} kcal</Text>
-                </HStack>
-              </VStack>
-            </GlassCard>
-          
-          {/* マクロ栄養素バランス */}
-          <GlassCard style={{ marginBottom: 16 }}>
-            <VStack space={3}>
-              <Heading size="md">マクロ栄養素バランス</Heading>
-              <Text color="gray.500" mb={2}>栄養バランスを確認しましょう</Text>
+            {isDesktop ? (
+              // デスクトップ: 2カラムレイアウト
+              <HStack space={4} mb={6} mt={4} alignItems="flex-start">
+                <GlassCard style={{ flex: 1 }}>
+                  <VStack space={4}>
+                    <HStack justifyContent="space-between" alignItems="center">
+                      <Heading size="md">カロリー進捗</Heading>
+                      <Badge colorScheme={calorieStatus.color.split('.')[0]} fontSize="md">
+                        {calorieStatus.text}
+                      </Badge>
+                    </HStack>
+                    
+                    <Progress
+                      value={Math.min((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100, 100)}
+                      size="lg"
+                      colorScheme={calorieStatus.color.split('.')[0]}
+                      bg="gray.200"
+                    />
+                    
+                    <HStack justifyContent="center" alignItems="baseline">
+                      <Heading size="2xl">{Math.round(totalNutrition.calories)}</Heading>
+                      <Text color="gray.500" ml={2} fontSize="lg"> / {dailySummary?.goalCalories || 2000} kcal</Text>
+                    </HStack>
+                  </VStack>
+                </GlassCard>
+
+                {/* マクロ栄養素バランス - デスクトップ */}
+                <GlassCard style={{ flex: 1 }}>
+                  <VStack space={3}>
+                    <Heading size="md">マクロ栄養素バランス</Heading>
+                    
+                    <VStack space={4}>
+                      {/* タンパク質 */}
+                      <VStack space={1}>
+                        <HStack justifyContent="space-between">
+                          <HStack alignItems="center" space={2}>
+                            <Box bg="primary.100" p={2} borderRadius="md">
+                              <Ionicons name="fitness-outline" size={20} color={Colors.primary} />
+                            </Box>
+                            <Text fontWeight="medium" fontSize="md">タンパク質</Text>
+                          </HStack>
+                          <Text fontSize="md">{Math.round(macroBalance.proteinGrams)}g ({Math.round(macroBalance.proteinPercentage)}%)</Text>
+                        </HStack>
+                        <Progress 
+                          value={macroBalance.proteinPercentage} 
+                          size="sm"
+                          colorScheme="primary"
+                          bg="primary.100"
+                        />
+                      </VStack>
+                      
+                      {/* 炭水化物 */}
+                      <VStack space={1}>
+                        <HStack justifyContent="space-between">
+                          <HStack alignItems="center" space={2}>
+                            <Box bg="secondary.100" p={2} borderRadius="md">
+                              <Ionicons name="leaf-outline" size={20} color={Colors.secondary} />
+                            </Box>
+                            <Text fontWeight="medium" fontSize="md">炭水化物</Text>
+                          </HStack>
+                          <Text fontSize="md">{Math.round(macroBalance.carbsGrams)}g ({Math.round(macroBalance.carbsPercentage)}%)</Text>
+                        </HStack>
+                        <Progress 
+                          value={macroBalance.carbsPercentage} 
+                          size="sm"
+                          colorScheme="secondary"
+                          bg="secondary.100"
+                        />
+                      </VStack>
+                      
+                      {/* 脂質 */}
+                      <VStack space={1}>
+                        <HStack justifyContent="space-between">
+                          <HStack alignItems="center" space={2}>
+                            <Box bg="yellow.100" p={2} borderRadius="md">
+                              <Ionicons name="water-outline" size={20} color={Colors.accent} />
+                            </Box>
+                            <Text fontWeight="medium" fontSize="md">脂質</Text>
+                          </HStack>
+                          <Text fontSize="md">{Math.round(macroBalance.fatGrams)}g ({Math.round(macroBalance.fatPercentage)}%)</Text>
+                        </HStack>
+                        <Progress 
+                          value={macroBalance.fatPercentage} 
+                          size="sm"
+                          colorScheme="yellow"
+                          bg="yellow.100"
+                        />
+                      </VStack>
+                    </VStack>
+                  </VStack>
+                </GlassCard>
+              </HStack>
+            ) : (
+              // モバイル/タブレット: 縦並びレイアウト
+              <>
+                <GlassCard style={{ marginVertical: 16 }}>
+                  <VStack space={4}>
+                    <HStack justifyContent="space-between" alignItems="center">
+                      <Heading size="md">カロリー進捗</Heading>
+                      <Badge colorScheme={calorieStatus.color.split('.')[0]}>
+                        {calorieStatus.text}
+                      </Badge>
+                    </HStack>
+                    
+                    <Progress
+                      value={Math.min((totalNutrition.calories / (dailySummary?.goalCalories || 2000)) * 100, 100)}
+                      size="lg"
+                      colorScheme={calorieStatus.color.split('.')[0]}
+                      bg="gray.200"
+                    />
+                    
+                    <HStack justifyContent="center" alignItems="baseline">
+                      <Heading size="lg">{Math.round(totalNutrition.calories)}</Heading>
+                      <Text color="gray.500" ml={1}> / {dailySummary?.goalCalories || 2000} kcal</Text>
+                    </HStack>
+                  </VStack>
+                </GlassCard>
               
-              <VStack space={4}>
-                {/* タンパク質 */}
-                <VStack space={1}>
-                  <HStack justifyContent="space-between">
-                    <HStack alignItems="center" space={2}>
-                      <Box bg="primary.100" p={1} borderRadius="md">
-                        <Ionicons name="fitness-outline" size={16} color={Colors.primary} />
-                      </Box>
-                      <Text fontWeight="medium">タンパク質</Text>
-                    </HStack>
-                    <Text>{Math.round(macroBalance.proteinGrams)}g ({Math.round(macroBalance.proteinPercentage)}%)</Text>
-                  </HStack>
-                  <Progress 
-                    value={macroBalance.proteinPercentage} 
-                    size="xs"
-                    colorScheme="primary"
-                    bg="primary.100"
-                  />
-                </VStack>
-                
-                {/* 炭水化物 */}
-                <VStack space={1}>
-                  <HStack justifyContent="space-between">
-                    <HStack alignItems="center" space={2}>
-                      <Box bg="secondary.100" p={1} borderRadius="md">
-                        <Ionicons name="leaf-outline" size={16} color={Colors.secondary} />
-                      </Box>
-                      <Text fontWeight="medium">炭水化物</Text>
-                    </HStack>
-                    <Text>{Math.round(macroBalance.carbsGrams)}g ({Math.round(macroBalance.carbsPercentage)}%)</Text>
-                  </HStack>
-                  <Progress 
-                    value={macroBalance.carbsPercentage} 
-                    size="xs"
-                    colorScheme="secondary"
-                    bg="secondary.100"
-                  />
-                </VStack>
-                
-                {/* 脂質 */}
-                <VStack space={1}>
-                  <HStack justifyContent="space-between">
-                    <HStack alignItems="center" space={2}>
-                      <Box bg="yellow.100" p={1} borderRadius="md">
-                        <Ionicons name="water-outline" size={16} color={Colors.accent} />
-                      </Box>
-                      <Text fontWeight="medium">脂質</Text>
-                    </HStack>
-                    <Text>{Math.round(macroBalance.fatGrams)}g ({Math.round(macroBalance.fatPercentage)}%)</Text>
-                  </HStack>
-                  <Progress 
-                    value={macroBalance.fatPercentage} 
-                    size="xs"
-                    colorScheme="yellow"
-                    bg="yellow.100"
-                  />
-                </VStack>
-              </VStack>
-            </VStack>
-          </GlassCard>
+                {/* マクロ栄養素バランス - モバイル */}
+                <GlassCard style={{ marginBottom: 16 }}>
+                  <VStack space={3}>
+                    <Heading size="md">マクロ栄養素バランス</Heading>
+                    <Text color="gray.500" mb={2}>栄養バランスを確認しましょう</Text>
+                    
+                    <VStack space={4}>
+                      {/* タンパク質 */}
+                      <VStack space={1}>
+                        <HStack justifyContent="space-between">
+                          <HStack alignItems="center" space={2}>
+                            <Box bg="primary.100" p={1} borderRadius="md">
+                              <Ionicons name="fitness-outline" size={16} color={Colors.primary} />
+                            </Box>
+                            <Text fontWeight="medium">タンパク質</Text>
+                          </HStack>
+                          <Text>{Math.round(macroBalance.proteinGrams)}g ({Math.round(macroBalance.proteinPercentage)}%)</Text>
+                        </HStack>
+                        <Progress 
+                          value={macroBalance.proteinPercentage} 
+                          size="xs"
+                          colorScheme="primary"
+                          bg="primary.100"
+                        />
+                      </VStack>
+                      
+                      {/* 炭水化物 */}
+                      <VStack space={1}>
+                        <HStack justifyContent="space-between">
+                          <HStack alignItems="center" space={2}>
+                            <Box bg="secondary.100" p={1} borderRadius="md">
+                              <Ionicons name="leaf-outline" size={16} color={Colors.secondary} />
+                            </Box>
+                            <Text fontWeight="medium">炭水化物</Text>
+                          </HStack>
+                          <Text>{Math.round(macroBalance.carbsGrams)}g ({Math.round(macroBalance.carbsPercentage)}%)</Text>
+                        </HStack>
+                        <Progress 
+                          value={macroBalance.carbsPercentage} 
+                          size="xs"
+                          colorScheme="secondary"
+                          bg="secondary.100"
+                        />
+                      </VStack>
+                      
+                      {/* 脂質 */}
+                      <VStack space={1}>
+                        <HStack justifyContent="space-between">
+                          <HStack alignItems="center" space={2}>
+                            <Box bg="yellow.100" p={1} borderRadius="md">
+                              <Ionicons name="water-outline" size={16} color={Colors.accent} />
+                            </Box>
+                            <Text fontWeight="medium">脂質</Text>
+                          </HStack>
+                          <Text>{Math.round(macroBalance.fatGrams)}g ({Math.round(macroBalance.fatPercentage)}%)</Text>
+                        </HStack>
+                        <Progress 
+                          value={macroBalance.fatPercentage} 
+                          size="xs"
+                          colorScheme="yellow"
+                          bg="yellow.100"
+                        />
+                      </VStack>
+                    </VStack>
+                  </VStack>
+                </GlassCard>
+              </>
+            )}
 
           {/* アクションボタン */}
-          <VStack space={3} mb={6}>
-            <HStack space={2}>
+          {isDesktop ? (
+            // デスクトップ: 4カラムグリッド
+            <HStack space={3} mb={6}>
               <Button
                 title="朝食を追加"
                 onPress={() => handleAddMeal('breakfast')}
@@ -411,9 +516,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
                 flex={1}
                 leftIcon={<Ionicons name="restaurant-outline" size={20} color="white" />}
               />
-            </HStack>
-            
-            <HStack space={2}>
               <Button
                 title="夕食を追加"
                 onPress={() => handleAddMeal('dinner')}
@@ -429,7 +531,44 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
                 leftIcon={<Ionicons name="cafe-outline" size={20} color={Colors.primary} />}
               />
             </HStack>
-          </VStack>
+          ) : (
+            // モバイル/タブレット: 2x2グリッド
+            <VStack space={3} mb={6}>
+              <HStack space={2}>
+                <Button
+                  title="朝食を追加"
+                  onPress={() => handleAddMeal('breakfast')}
+                  variant="primary"
+                  flex={1}
+                  leftIcon={<Ionicons name="sunny-outline" size={20} color="white" />}
+                />
+                <Button
+                  title="昼食を追加"
+                  onPress={() => handleAddMeal('lunch')}
+                  variant="primary"
+                  flex={1}
+                  leftIcon={<Ionicons name="restaurant-outline" size={20} color="white" />}
+                />
+              </HStack>
+              
+              <HStack space={2}>
+                <Button
+                  title="夕食を追加"
+                  onPress={() => handleAddMeal('dinner')}
+                  variant="primary"
+                  flex={1}
+                  leftIcon={<Ionicons name="moon-outline" size={20} color="white" />}
+                />
+                <Button
+                  title="間食を追加"
+                  onPress={() => handleAddMeal('snack')}
+                  variant="outline"
+                  flex={1}
+                  leftIcon={<Ionicons name="cafe-outline" size={20} color={Colors.primary} />}
+                />
+              </HStack>
+            </VStack>
+          )}
 
           {/* 今日の食事記録 */}
           {hasMeals && (
@@ -496,7 +635,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
               </VStack>
             </GlassCard>
           )}
-        </Box>
+          </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
   </AnimatedBackground>
