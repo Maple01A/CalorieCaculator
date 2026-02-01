@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    
+    <title>カロリー計算アプリ</title>
+    <meta name="description" content="日々の栄養摂取を簡単に管理できるカロリー計算アプリ" />
+    
+    <!-- Disable zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    
+    <!-- PWA primary color -->
+    <meta name="theme-color" content="#FF9800" />
+    
+    <style>
+      /**
+       * Ensure the page is responsive
+       */
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      
+      body {
+        overflow: hidden;
+      }
+
+      #root {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /**
+       * Loading indicator
+       */
+      .expo-loading-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .expo-loading-indicator-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .expo-loading-indicator-text {
+        margin-top: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #666;
+        font-size: 14px;
+      }
+
+      /**
+       * Simple spinner
+       */
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #FF9800;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>JavaScriptを有効にしてください。</noscript>
+    
+    <div id="root">
+      <!-- Loading indicator -->
+      <div class="expo-loading-indicator">
+        <div class="expo-loading-indicator-container">
+          <div class="spinner"></div>
+          <div class="expo-loading-indicator-text">読み込み中...</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
