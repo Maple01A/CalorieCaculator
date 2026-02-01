@@ -19,19 +19,34 @@ import { Card } from '../components/Card';
 
 interface LoginScreenProps {
   navigation: any;
+  route?: any;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
+  const convertFromGuest = route?.params?.convertFromGuest || false;
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(convertFromGuest); // ゲストからの変換時は新規登録モード
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadLastEmail();
   }, []);
+
+  useEffect(() => {
+    // ゲストからの変換時はメッセージを表示
+    if (convertFromGuest) {
+      console.log('🔄 ゲストからアカウント変換モード');
+      Alert.alert(
+        'アカウント作成',
+        'ゲストデータをアカウントに保存します。メールアドレスとパスワードを設定してください。',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [convertFromGuest]);
 
   const loadLastEmail = async () => {
     const lastEmail = await authService.getLastLoginEmail();
@@ -79,18 +94,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
     try {
       setLoading(true);
-      await authService.signUpWithEmail(email.trim(), password, displayName.trim());
+      
+      // ゲストからの変換か新規登録かで処理を分岐
+      if (convertFromGuest) {
+        console.log('🔄 ゲストデータをアカウントに変換中...');
+        await authService.convertGuestToUser(email.trim(), password, displayName.trim() || 'ユーザー');
+      } else {
+        await authService.signUpWithEmail(email.trim(), password, displayName.trim());
+      }
       
       // ローカルデータをクラウドに同期
       await cloudSyncService.syncToCloud();
       
-      Alert.alert('登録成功', 'アカウントを作成しました', [
+      const message = convertFromGuest 
+        ? 'ゲストデータをアカウントに保存しました' 
+        : 'アカウントを作成しました';
+      
+      Alert.alert('登録成功', message, [
         {
           text: 'OK',
           onPress: () => navigation.goBack(),
         },
       ]);
     } catch (error: any) {
+      console.error('登録エラー:', error);
       Alert.alert('登録エラー', error.message);
     } finally {
       setLoading(false);

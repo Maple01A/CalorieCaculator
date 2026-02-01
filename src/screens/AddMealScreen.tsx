@@ -281,47 +281,6 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
           </Card>
         )}
 
-        {/* 合計栄養成分 */}
-        {selectedFoods.length > 0 && (
-          <Card style={styles.totalCard}>
-            <Text style={styles.sectionTitle}>合計栄養成分</Text>
-
-            <View style={styles.totalGrid}>
-              <View style={styles.totalItem}>
-                <Ionicons name="flame" size={32} color={Colors.primary} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.calories)}
-                </Text>
-                <Text style={styles.totalLabel}>カロリー (kcal)</Text>
-              </View>
-
-              <View style={styles.totalItem}>
-                <Ionicons name="fitness" size={32} color={Colors.primary} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.protein * 10) / 10}g
-                </Text>
-                <Text style={styles.totalLabel}>タンパク質</Text>
-              </View>
-
-              <View style={styles.totalItem}>
-                <Ionicons name="leaf" size={32} color={Colors.secondary} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.carbs * 10) / 10}g
-                </Text>
-                <Text style={styles.totalLabel}>炭水化物</Text>
-              </View>
-
-              <View style={styles.totalItem}>
-                <Ionicons name="water" size={32} color={Colors.accent} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.fat * 10) / 10}g
-                </Text>
-                <Text style={styles.totalLabel}>脂質</Text>
-              </View>
-            </View>
-          </Card>
-        )}
-
         {/* 食品を追加ボタン */}
         <Card style={styles.addButtonCard}>
           <Button

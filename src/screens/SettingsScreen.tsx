@@ -93,6 +93,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   };
 
   const handleConvertToUser = () => {
+    console.log('🔄 アカウント作成ボタンが押されました');
+    console.log('Navigation object:', navigation);
+    
+    if (!navigation) {
+      console.error('❌ Navigation is not available');
+      Alert.alert('エラー', 'ページ遷移に失敗しました。アプリを再起動してください。');
+      return;
+    }
+    
     Alert.alert(
       'アカウント作成',
       'ゲストデータをアカウントに移行します。メールアドレスとパスワードを設定してください。',
@@ -100,11 +109,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         { text: 'キャンセル', style: 'cancel' },
         {
           text: 'アカウント作成',
-          onPress: () => navigation.navigate('Login'),
+          onPress: () => {
+            try {
+              console.log('✅ Loginスクリーンに遷移します');
+              navigation.navigate('Login', { convertFromGuest: true });
+            } catch (error) {
+              console.error('❌ Navigation error:', error);
+              Alert.alert('エラー', 'ページ遷移に失敗しました');
+            }
+          },
         },
       ]
     );
-  };
+  }
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -147,37 +164,26 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
 
           {/* アカウント情報 */}
-          {currentUser && (
+          {currentUser && !isGuest && (
             <Card style={styles.accountCard}>
               <View style={styles.accountHeader}>
                 <Ionicons 
-                  name={isGuest ? "person-outline" : "person-circle-outline"} 
+                  name="person-circle-outline" 
                   size={48} 
-                  color={isGuest ? Colors.textSecondary : Colors.primary} 
+                  color={Colors.primary} 
                 />
                 <View style={styles.accountInfo}>
                   <Text style={styles.accountName}>
                     {currentUser.displayName}
                   </Text>
-                  {!isGuest && currentUser.email && (
+                  {currentUser.email && (
                     <Text style={styles.accountEmail}>{currentUser.email}</Text>
                   )}
                 </View>
               </View>
 
-              {isGuest && (
-                <Button
-                  title="アカウントを作成してデータを保存"
-                  onPress={handleConvertToUser}
-                  variant="primary"
-                  size="sm"
-                  style={styles.convertButton}
-                  leftIcon={<Ionicons name="cloud-upload-outline" size={18} color="white" />}
-                />
-              )}
-
               <Button
-                title={isGuest ? "ゲストモードを終了" : "ログアウト"}
+                title="ログアウト"
                 onPress={handleSignOut}
                 variant="outline"
                 size="sm"
