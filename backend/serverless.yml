@@ -1,0 +1,192 @@
+service: calorie-calculator-api
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-1  # 東京リージョン
+  stage: ${opt:stage, 'dev'}
+  memorySize: 256
+  timeout: 10
+  
+  environment:
+    FOODS_TABLE: ${self:service}-${self:provider.stage}-Foods
+    MEALS_TABLE: ${self:service}-${self:provider.stage}-Meals
+    USERS_TABLE: ${self:service}-${self:provider.stage}-Users
+    STAGE: ${self:provider.stage}
+    JWT_SECRET: ${env:JWT_SECRET, 'your-secret-key-change-this-in-production'}
+    JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FOODS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEALS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEALS_TABLE}/index/*
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+
+functions:
+  # 認証関連API
+  signUp:
+    handler: src/lambda/auth.signUp
+    events:
+      - http:
+          path: /auth/signup
+          method: post
+          cors: true
+  
+  signIn:
+    handler: src/lambda/auth.signIn
+    events:
+      - http:
+          path: /auth/signin
+          method: post
+          cors: true
+  
+  getCurrentUser:
+    handler: src/lambda/auth.getCurrentUser
+    events:
+      - http:
+          path: /auth/me
+          method: get
+          cors: true
+  
+  changePassword:
+    handler: src/lambda/auth.changePassword
+    events:
+      - http:
+          path: /auth/change-password
+          method: post
+          cors: true
+  
+  # 食品関連API
+  searchFoods:
+    handler: src/lambda/handler.searchFoods
+    events:
+      - http:
+          path: /foods/search
+          method: get
+          cors: true
+  
+  getFoodById:
+    handler: src/lambda/handler.getFoodById
+    events:
+      - http:
+          path: /foods/{id}
+          method: get
+          cors: true
+  
+  # 食事記録関連API
+  addMealRecord:
+    handler: src/lambda/handler.addMealRecord
+    events:
+      - http:
+          path: /meals
+          method: post
+          cors: true
+  
+  getDailySummary:
+    handler: src/lambda/handler.getDailySummary
+    events:
+      - http:
+          path: /meals/{userId}/daily/{date}
+          method: get
+          cors: true
+  
+  # ユーザー設定関連API
+  getUserSettings:
+    handler: src/lambda/handler.getUserSettings
+    events:
+      - http:
+          path: /users/{userId}/settings
+          method: get
+          cors: true
+  
+  updateUserSettings:
+    handler: src/lambda/handler.updateUserSettings
+    events:
+      - http:
+          path: /users/{userId}/settings
+          method: put
+          cors: true
+
+resources:
+  Resources:
+    # 食品テーブル
+    FoodsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.FOODS_TABLE}
+        BillingMode: PAY_PER_REQUEST  # オンデマンド課金（無料枠に含まれる）
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+    
+    # 食事記録テーブル
+    MealsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.MEALS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIdTimestampIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+    
+    # ユーザーテーブル
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+custom:
+  serverless-offline:
+    httpPort: 3000

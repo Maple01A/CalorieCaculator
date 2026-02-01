@@ -6,12 +6,16 @@ import {
   ScrollView,
   Alert,
   Switch,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
+import { authService } from '../services/auth';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { AnimatedBackground } from '../components/AnimatedBackground';
 import { Colors } from '../constants/colors';
 import { Spacing } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
@@ -33,6 +37,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const currentUser = authService.getCurrentUser();
+  const isGuest = authService.isGuestMode();
 
   useEffect(() => {
     loadSettings();
@@ -85,6 +92,59 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     return gender === 'male' ? '男性' : '女性';
   };
 
+  const handleConvertToUser = () => {
+    console.log('🔄 アカウント作成ボタンが押されました');
+    console.log('Navigation object:', navigation);
+    
+    if (!navigation) {
+      console.error('❌ Navigation is not available');
+      Alert.alert('エラー', 'ページ遷移に失敗しました。アプリを再起動してください。');
+      return;
+    }
+    
+    Alert.alert(
+      'アカウント作成',
+      'ゲストデータをアカウントに移行します。メールアドレスとパスワードを設定してください。',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: 'アカウント作成',
+          onPress: () => {
+            try {
+              console.log('✅ Loginスクリーンに遷移します');
+              navigation.navigate('Login', { convertFromGuest: true });
+            } catch (error) {
+              console.error('❌ Navigation error:', error);
+              Alert.alert('エラー', 'ページ遷移に失敗しました');
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'ログアウト',
+      isGuest ? 'ゲストモードを終了しますか？ローカルデータは保持されます。' : 'ログアウトしますか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: 'ログアウト',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await authService.signOut();
+              Alert.alert('完了', 'ログアウトしました');
+            } catch (error: any) {
+              Alert.alert('エラー', error.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -96,11 +156,42 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <Text style={styles.subtitle}>カロリー目標を設定しましょう</Text>
-        </View>
+    <AnimatedBackground variant="neutral">
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.header}>
+            <Text style={styles.subtitle}>カロリー目標を設定しましょう</Text>
+          </View>
+
+          {/* アカウント情報 */}
+          {currentUser && !isGuest && (
+            <Card style={styles.accountCard}>
+              <View style={styles.accountHeader}>
+                <Ionicons 
+                  name="person-circle-outline" 
+                  size={48} 
+                  color={Colors.primary} 
+                />
+                <View style={styles.accountInfo}>
+                  <Text style={styles.accountName}>
+                    {currentUser.displayName}
+                  </Text>
+                  {currentUser.email && (
+                    <Text style={styles.accountEmail}>{currentUser.email}</Text>
+                  )}
+                </View>
+              </View>
+
+              <Button
+                title="ログアウト"
+                onPress={handleSignOut}
+                variant="outline"
+                size="sm"
+                style={styles.signOutButton}
+                leftIcon={<Ionicons name="log-out-outline" size={18} color={Colors.error} />}
+              />
+            </Card>
+          )}
 
         {/* 基本情報 */}
         <Card style={styles.sectionCard}>
@@ -189,14 +280,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   
   scrollView: {
@@ -280,5 +371,45 @@ const styles = StyleSheet.create({
   
   saveButton: {
     marginTop: Spacing.base,
+  },
+
+  accountCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.base,
+  },
+  
+  accountHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.base,
+    marginBottom: Spacing.base,
+  },
+  
+  accountInfo: {
+    flex: 1,
+  },
+  
+  accountName: {
+    ...TextStyles.h3,
+    color: Colors.text,
+  },
+  
+  guestBadge: {
+    ...TextStyles.caption,
+    color: Colors.textSecondary,
+  },
+  
+  accountEmail: {
+    ...TextStyles.body,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  
+  convertButton: {
+    marginBottom: Spacing.sm,
+  },
+  
+  signOutButton: {
+    borderColor: Colors.error,
   },
 });

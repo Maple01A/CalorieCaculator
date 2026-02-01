@@ -15,6 +15,7 @@ import { FoodCard } from '../components/FoodCard';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AddFoodModal } from '../components/AddFoodModal';
+import { AnimatedBackground } from '../components/AnimatedBackground';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
@@ -192,14 +193,15 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.subtitle}>食品のカロリーを確認しましょう</Text>
+    <AnimatedBackground variant="secondary">
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.subtitle}>食品のカロリーを確認しましょう</Text>
+            </View>
           </View>
         </View>
-      </View>
 
       <View style={styles.searchContainer}>
         <Input
@@ -254,14 +256,14 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddFoodSuccess}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   
   header: {

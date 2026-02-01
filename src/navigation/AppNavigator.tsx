@@ -10,6 +10,7 @@ import { FoodDetailScreen } from '../screens/FoodDetailScreen';
 import { AddMealScreen } from '../screens/AddMealScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { LoginScreen } from '../screens/LoginScreen';
 
 import { Colors } from '../constants/colors';
 import { TextStyles } from '../constants/typography';
@@ -133,6 +134,14 @@ const RootStackNavigator = () => {
         component={AddMealScreen}
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
         }}
       />
     </Stack.Navigator>

@@ -16,6 +16,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { FoodCard } from '../components/FoodCard';
 import { AddFoodModal } from '../components/AddFoodModal';
+import { AnimatedBackground } from '../components/AnimatedBackground';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
@@ -197,12 +198,13 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
   const totalNutrition = calculateTotalNutrition();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+    <AnimatedBackground variant="primary">
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <View style={styles.headerTitle}>
@@ -276,47 +278,6 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
                 )}
               </View>
             ))}
-          </Card>
-        )}
-
-        {/* 合計栄養成分 */}
-        {selectedFoods.length > 0 && (
-          <Card style={styles.totalCard}>
-            <Text style={styles.sectionTitle}>合計栄養成分</Text>
-
-            <View style={styles.totalGrid}>
-              <View style={styles.totalItem}>
-                <Ionicons name="flame" size={32} color={Colors.primary} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.calories)}
-                </Text>
-                <Text style={styles.totalLabel}>カロリー (kcal)</Text>
-              </View>
-
-              <View style={styles.totalItem}>
-                <Ionicons name="fitness" size={32} color={Colors.primary} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.protein * 10) / 10}g
-                </Text>
-                <Text style={styles.totalLabel}>タンパク質</Text>
-              </View>
-
-              <View style={styles.totalItem}>
-                <Ionicons name="leaf" size={32} color={Colors.secondary} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.carbs * 10) / 10}g
-                </Text>
-                <Text style={styles.totalLabel}>炭水化物</Text>
-              </View>
-
-              <View style={styles.totalItem}>
-                <Ionicons name="water" size={32} color={Colors.accent} />
-                <Text style={styles.totalValue}>
-                  {Math.round(totalNutrition.fat * 10) / 10}g
-                </Text>
-                <Text style={styles.totalLabel}>脂質</Text>
-              </View>
-            </View>
           </Card>
         )}
 
@@ -416,14 +377,14 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
         onClose={() => setShowAddFoodModal(false)}
         onSuccess={handleAddFoodSuccess}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
 
   header: {

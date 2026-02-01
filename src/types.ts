@@ -1,18 +1,3 @@
-export interface MealRecord {
-  id: number;
-  date: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  foodName: string;
-  amount: number;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  createdAt: string;
-}
-
-export interface DailySummary {
-  date: string;
-  goalCalories: number;
-  meals: MealRecord[];
-}
+// このファイルは互換性のために残されています。
+// すべての型定義は src/types/index.ts に統一されています。
+export * from './types/index';

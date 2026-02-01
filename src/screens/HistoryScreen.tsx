@@ -14,6 +14,7 @@ import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { Card } from '../components/Card';
+import { AnimatedBackground } from '../components/AnimatedBackground';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
@@ -236,28 +237,40 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   };
 
   const chartConfig = {
-    backgroundGradientFrom: Colors.surface,
-    backgroundGradientTo: Colors.surface,
-    color: (opacity = 1) => Colors.primary,
-    strokeWidth: 2,
-    barPercentage: 0.7,
+    backgroundGradientFrom: '#FFFFFF',
+    backgroundGradientFromOpacity: 0,
+    backgroundGradientTo: '#FFFFFF',
+    backgroundGradientToOpacity: 0,
+    color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+    strokeWidth: 3,
+    barPercentage: 0.8,
     useShadowColorFromDataset: false,
     decimalPlaces: 0,
     propsForLabels: {
-      fontSize: 11,
-      fontWeight: '500',
+      fontSize: 12,
+      fontWeight: '600',
+      fill: Colors.text,
     },
     propsForBackgroundLines: {
-      strokeDasharray: '',
-      stroke: Colors.borderLight,
+      strokeDasharray: '5,5',
+      stroke: Colors.border,
       strokeWidth: 1,
+      strokeOpacity: 0.3,
+    },
+    propsForDots: {
+      r: '5',
+      strokeWidth: '2',
+      stroke: Colors.primary,
     },
   };
 
   const barChartConfig = {
     ...chartConfig,
     fillShadowGradient: Colors.primary,
-    fillShadowGradientOpacity: 1,
+    fillShadowGradientFrom: Colors.primary,
+    fillShadowGradientFromOpacity: 0.9,
+    fillShadowGradientTo: Colors.primary,
+    fillShadowGradientToOpacity: 0.6,
   };
 
   if (loading) {
@@ -273,20 +286,21 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const weeklyStats = getWeeklyStats();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[Colors.primary]}
-            tintColor={Colors.primary}
-          />
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
+    <AnimatedBackground variant="neutral">
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
+            />
+          }
+        >
+          <View style={styles.header}>
+            <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
         </View>
 
         {/* 週間統計カード */}
@@ -337,18 +351,22 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             <LineChart
               data={getCalorieChartData()}
               width={Math.max(screenWidth - 80, 400)}
-              height={220}
+              height={240}
               chartConfig={chartConfig}
               bezier
               style={styles.chart}
               withInnerLines={true}
-              withOuterLines={true}
-              withVerticalLines={true}
+              withOuterLines={false}
+              withVerticalLines={false}
               withHorizontalLines={true}
               withVerticalLabels={true}
               withHorizontalLabels={true}
+              withDots={true}
+              withShadow={false}
               fromZero
               segments={4}
+              yAxisSuffix=" kcal"
+              formatYLabel={(value) => Math.round(Number(value)).toString()}
             />
           </ScrollView>
           
@@ -372,19 +390,31 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           <BarChart
             data={getNutritionChartData()}
             width={screenWidth - 80}
-            height={220}
+            height={240}
             yAxisLabel=""
             yAxisSuffix="g"
             chartConfig={{
               ...barChartConfig,
               color: (opacity = 1, index) => {
-                const colors = [Colors.primary, Colors.secondary, Colors.accent];
+                const colors = [
+                  `rgba(33, 150, 243, ${opacity})`,  // Blue for protein
+                  `rgba(255, 152, 0, ${opacity})`,   // Orange for carbs
+                  `rgba(233, 30, 99, ${opacity})`    // Pink for fat
+                ];
                 return colors[index || 0];
+              },
+              propsForBackgroundLines: {
+                strokeDasharray: '5,5',
+                stroke: Colors.border,
+                strokeWidth: 1,
+                strokeOpacity: 0.2,
               },
             }}
             style={styles.chart}
             showValuesOnTopOfBars
+            withInnerLines={true}
             fromZero
+            segments={4}
           />
         </Card>
 
@@ -499,14 +529,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           })}
         </Card>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   
   scrollView: {
@@ -599,6 +629,7 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: Spacing.base,
     borderRadius: BorderRadius.lg,
+    paddingRight: 20,
   },
   
   legend: {

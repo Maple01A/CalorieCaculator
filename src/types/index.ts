@@ -43,6 +43,7 @@ export interface UserSettings {
   age: number;
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   gender: 'male' | 'female';
+  isGuest?: boolean; // ゲストモードフラグ
 }
 
 // ナビゲーションの型定義
