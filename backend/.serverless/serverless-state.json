@@ -264,7 +264,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/auth.signUp",
               "Runtime": "nodejs18.x",
@@ -299,7 +299,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/auth.signIn",
               "Runtime": "nodejs18.x",
@@ -334,7 +334,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/auth.getCurrentUser",
               "Runtime": "nodejs18.x",
@@ -369,7 +369,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/auth.changePassword",
               "Runtime": "nodejs18.x",
@@ -404,7 +404,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/handler.searchFoods",
               "Runtime": "nodejs18.x",
@@ -439,7 +439,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/handler.getFoodById",
               "Runtime": "nodejs18.x",
@@ -474,7 +474,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/handler.addMealRecord",
               "Runtime": "nodejs18.x",
@@ -509,7 +509,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/handler.getDailySummary",
               "Runtime": "nodejs18.x",
@@ -544,7 +544,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/handler.getUserSettings",
               "Runtime": "nodejs18.x",
@@ -579,7 +579,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z/calorie-calculator-api.zip"
+                "S3Key": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z/calorie-calculator-api.zip"
               },
               "Handler": "src/lambda/handler.updateUserSettings",
               "Runtime": "nodejs18.x",
@@ -1776,7 +1776,7 @@
               "UpdateUserSettingsLambdaPermissionApiGateway"
             ]
           },
-          "ApiGatewayDeployment1769871312396": {
+          "ApiGatewayDeployment1769953344847": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -3053,7 +3053,7 @@
     "artifact": "C:\\Users\\dendo\\CalorieCalculator\\backend\\.build\\.serverless\\calorie-calculator-api.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/calorie-calculator-api/dev/1769871399761-2026-01-31T14:56:39.761Z",
+    "artifactDirectoryName": "serverless/calorie-calculator-api/dev/1769953461697-2026-02-01T13:44:21.697Z",
     "artifact": "calorie-calculator-api.zip"
   }
 }
