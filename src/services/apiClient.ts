@@ -6,6 +6,8 @@ const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl ||
                      process.env.EXPO_PUBLIC_API_URL || 
                      'http://localhost:3000';
 
+console.log('🌐 API Base URL:', API_BASE_URL);
+
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -59,8 +61,11 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    const fullUrl = `${this.baseUrl}${endpoint}`;
+    console.log('🔗 API Request:', fullUrl);
+
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(fullUrl, {
         ...options,
         headers,
       });
@@ -68,7 +73,8 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'リクエストに失敗しました');
+        console.error('❌ API Error:', response.status, data);
+        throw new Error(data.error || data.message || 'リクエストに失敗しました');
       }
 
       return data;

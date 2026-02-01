@@ -108,7 +108,7 @@ npx ts-node scripts/seed-foods.ts
 
 ```bash
 cd ..
-echo "EXPO_PUBLIC_API_URL=https://xxxxxxxxxx.execute-api.ap-northeast-1.amazonaws.com/dev" > .env
+echo "EXPO_PUBLIC_API_URL=https://lhin3a5hmb.execute-api.ap-northeast-1.amazonaws.com/dev" > .env
 ```
 
 または手動で作成：
