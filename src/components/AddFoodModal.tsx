@@ -137,15 +137,9 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         ...newFood,
       };
 
-      Alert.alert('成功', '食品を登録しました', [
-        {
-          text: 'OK',
-          onPress: () => {
-            onSuccess(savedFood);
-            onClose();
-          },
-        },
-      ]);
+      // 登録後、すぐにモーダルを閉じる
+      onSuccess(savedFood);
+      onClose();
     } catch (error) {
       console.error('食品の登録に失敗しました:', error);
       Alert.alert('エラー', '食品の登録に失敗しました');

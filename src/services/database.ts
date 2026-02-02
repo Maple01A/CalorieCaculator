@@ -368,6 +368,83 @@ class DatabaseService {
     return id;
   }
 
+  // 食事記録の削除
+  async deleteMealRecord(id: string): Promise<void> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    try {
+      console.log('🗑️ 食事記録を削除:', id);
+      const result = await this.db.runAsync(
+        'DELETE FROM meal_records WHERE id = ?',
+        [id]
+      );
+      console.log('削除結果:', result);
+    } catch (error) {
+      console.error('食事記録の削除エラー:', error);
+      throw new Error('食事記録の削除に失敗しました');
+    }
+  }
+
+  // 特定の食品を使用している食事記録をすべて削除
+  async deleteMealRecordsByFoodId(foodId: string): Promise<void> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    try {
+      
+      // まず該当する記録を確認
+      const records = await this.db.getAllAsync(
+        'SELECT * FROM meal_records WHERE food_id = ?',
+        [foodId]
+      );
+      
+      if (records.length > 0) {
+        const result = await this.db.runAsync(
+          'DELETE FROM meal_records WHERE food_id = ?',
+          [foodId]
+        );
+        console.log('食事記録削除結果:', result);
+      }
+    } catch (error) {
+      console.error('食事記録の削除エラー:', error);
+      throw new Error('関連する食事記録の削除に失敗しました');
+    }
+  }
+
+  // 食品の削除
+  async deleteFood(foodId: string): Promise<void> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    // カスタム食品のみ削除可能
+    if (!foodId.startsWith('custom_')) {
+      throw new Error('デフォルト食品は削除できません');
+    }
+
+    try {
+      
+      // 食品が存在するか確認
+      const food = await this.db.getFirstAsync(
+        'SELECT * FROM foods WHERE id = ?',
+        [foodId]
+      );
+      
+      if (!food) {
+        throw new Error('食品が見つかりません');
+      }
+      
+      const result = await this.db.runAsync(
+        'DELETE FROM foods WHERE id = ?',
+        [foodId]
+      );
+
+    } catch (error) {
+      console.error('食品の削除エラー:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('食品の削除に失敗しました');
+    }
+  }
+
   // カテゴリ一覧の取得
   async getFoodCategories(): Promise<string[]> {
     if (!this.db) throw new Error('データベースが初期化されていません');

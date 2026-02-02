@@ -171,13 +171,13 @@ async function seedFoods() {
         },
       }));
 
-      console.log(`✅ ${batch.length}件のデータを投入しました`);
+      console.log(`${batch.length}件のデータを投入しました`);
     }
 
-    console.log('🎉 データ投入完了！');
-    console.log(`📝 合計: ${sampleFoods.length}件の食品データ`);
+    console.log('データ投入完了！');
+    console.log(`合計: ${sampleFoods.length}件の食品データ`);
   } catch (error) {
-    console.error('❌ エラーが発生しました:', error);
+    console.error('エラーが発生しました:', error);
     process.exit(1);
   }
 }

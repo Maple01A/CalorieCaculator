@@ -7,8 +7,10 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { FoodCard } from '../components/FoodCard';
@@ -16,20 +18,32 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AddFoodModal } from '../components/AddFoodModal';
 import { AnimatedBackground } from '../components/AnimatedBackground';
+import { GlassCard } from '../components/GlassCard';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
 import { Food } from '../types';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface FoodSearchScreenProps {
   navigation: any;
+  route?: any;
 }
 
-export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }) => {
+export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { isMobile, isDesktop } = useResponsive();
+
+  // 画面がフォーカスされたときにリロード
+  useFocusEffect(
+    useCallback(() => {
+      loadAllFoods();
+    }, [])
+  );
 
   // 初回表示時にすべての食品を読み込む
   useEffect(() => {
@@ -116,11 +130,11 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }
   );
 
   const renderListHeader = () => {
-    if (loading) return null;
+    if (loading || foods.length === 0) return null;
     
     return (
       <View style={styles.listHeader}>
-        <Text style={styles.listHeaderText}>
+        <Text style={[styles.listHeaderText, isDesktop && { fontSize: 16 }]}>
           {searchQuery.trim() === '' 
             ? `全${foods.length}件の食品`
             : `${foods.length}件の検索結果`
@@ -149,21 +163,6 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }
             別のキーワードで検索するか、新しい食品を登録してください
           </Text>
           <View style={styles.emptyActions}>
-            <Button
-              title="検索をクリア"
-              onPress={handleClearSearch}
-              variant="outline"
-              size="sm"
-              style={styles.emptyButton}
-            />
-            <TouchableOpacity
-              style={styles.emptyAddButton}
-              onPress={() => setShowAddModal(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add-circle" size={20} color={Colors.surface} />
-              <Text style={styles.emptyAddButtonText}>食品を登録</Text>
-            </TouchableOpacity>
           </View>
         </View>
       );
@@ -195,54 +194,78 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation }
   return (
     <AnimatedBackground variant="secondary">
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
+        <ResponsiveContainer>
+          {/* ヘッダー */}
+          <View style={[styles.header, isDesktop && { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
             <View style={styles.headerLeft}>
-              <Text style={styles.subtitle}>食品のカロリーを確認しましょう</Text>
+              <Text style={[styles.title, isDesktop && TextStyles.h1]}>食品検索</Text>
+              <Text style={[styles.subtitle, isDesktop && { fontSize: 16 }]}>食品のカロリーを確認しましょう</Text>
             </View>
-          </View>
-        </View>
-
-      <View style={styles.searchContainer}>
-        <Input
-          placeholder="食品名を入力してください（例：白米、鶏胸肉）"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          style={styles.searchInput}
-          rightIcon={
-            searchQuery.trim() !== '' ? (
+            {isDesktop && (
+              <Button
+                title="食品を登録"
+                onPress={() => setShowAddModal(true)}
+                variant="primary"
+                leftIcon={<Ionicons name="add-circle" size={20} color={Colors.surface} />}
+              />
+            )}
+            {!isDesktop && (
               <TouchableOpacity
-                onPress={handleClearSearch}
-                style={styles.clearButton}
-                activeOpacity={0.7}
+                style={styles.addButtonIcon}
+                onPress={() => setShowAddModal(true)}
+                activeOpacity={0.8}
               >
-                <Ionicons name="close-circle" size={20} color={Colors.textSecondary} />
+                <Ionicons name="add" size={24} color={Colors.surface} />
               </TouchableOpacity>
-            ) : undefined
-          }
-        />
-        {loading && (
-          <View style={styles.searchingIndicator}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-            <Text style={styles.searchingText}>検索中...</Text>
+            )}
           </View>
-        )}
-      </View>
 
-      <FlatList
-        data={foods}
-        renderItem={renderFoodItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderListHeader}
-        ListEmptyComponent={renderEmptyState}
-        keyboardShouldPersistTaps="handled"
-      />
+          {/* 検索バー */}
+          <GlassCard style={{ marginBottom: isDesktop ? 24 : 16 }}>
+            <Input
+              placeholder="食品名を入力してください（例：白米、鶏胸肉）"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              rightIcon={
+                searchQuery.trim() !== '' ? (
+                  <TouchableOpacity
+                    onPress={handleClearSearch}
+                    style={styles.clearButton}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close-circle" size={20} color={Colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : undefined
+              }
+            />
+            {loading && (
+              <View style={styles.searchingIndicator}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <Text style={styles.searchingText}>検索中...</Text>
+              </View>
+            )}
+          </GlassCard>
 
-      {/* フローティング登録ボタン */}
-      {!showAddModal && foods.length > 0 && (
-        <TouchableOpacity
+          {/* 検索結果ヘッダー */}
+          {renderListHeader()}
+        </ResponsiveContainer>
+
+        <ResponsiveContainer>
+          <FlatList
+            data={foods}
+            renderItem={renderFoodItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={renderEmptyState}
+            keyboardShouldPersistTaps="handled"
+          />
+        </ResponsiveContainer>
+
+        {/* フローティング登録ボタン（モバイルのみ） */}
+        {!showAddModal && foods.length > 0 && !isDesktop && (
+          <TouchableOpacity
           style={styles.floatingButton}
           onPress={() => setShowAddModal(true)}
           activeOpacity={0.9}
@@ -266,16 +289,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.base,
-    paddingBottom: Spacing.sm,
+  row: {
+    justifyContent: 'space-between',
+    gap: Spacing.base,
   },
 
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  header: {
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+    marginBottom: Spacing.base,
   },
 
   headerLeft: {
@@ -283,7 +305,7 @@ const styles = StyleSheet.create({
   },
   
   title: {
-    ...TextStyles.h1,
+    ...TextStyles.h2,
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
@@ -291,13 +313,6 @@ const styles = StyleSheet.create({
   subtitle: {
     ...TextStyles.body,
     color: Colors.textSecondary,
-  },
-
-  // 改善された登録ボタン（ヘッダー）
-  addButton: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: Spacing.xs,
   },
 
   addButtonIcon: {
@@ -314,17 +329,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  addButtonText: {
-    ...TextStyles.caption,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  
-  searchContainer: {
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-  },
-  
   searchInput: {
     marginBottom: 0,
   },
@@ -357,7 +361,6 @@ const styles = StyleSheet.create({
   },
   
   listContainer: {
-    paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xl,
   },
   

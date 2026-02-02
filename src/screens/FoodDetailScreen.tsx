@@ -5,18 +5,24 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { FoodCard } from '../components/FoodCard';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { AnimatedBackground } from '../components/AnimatedBackground';
+import { GlassCard } from '../components/GlassCard';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { Colors } from '../constants/colors';
-import { Spacing } from '../constants/spacing';
+import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
 import { Food, MealRecord } from '../types';
 import { calculateNutritionForAmount } from '../utils/calorieCalculator';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface FoodDetailScreenProps {
   navigation: any;
@@ -34,6 +40,7 @@ export const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({ navigation, 
   const [calculatedNutrition, setCalculatedNutrition] = useState(
     calculateNutritionForAmount(food, 100)
   );
+  const { isMobile, isDesktop } = useResponsive();
 
   const handleAmountChange = (text: string) => {
     setAmount(text);
@@ -83,6 +90,30 @@ export const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({ navigation, 
     }
   };
 
+  const handleDeleteFood = async () => {
+    // カスタム食品のみ削除可能
+    if (!food.id.startsWith('custom_')) {
+      Alert.alert('エラー', 'デフォルト食品は削除できません');
+      return;
+    }
+
+    try {
+      // 1. この食品を使用している食事記録を削除
+      await databaseService.deleteMealRecordsByFoodId(food.id);
+      
+      // 2. 食品を削除
+      await databaseService.deleteFood(food.id);
+
+      // 削除後、食品検索画面に戻る
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert(
+        'エラー',
+        error.message || '食品の削除に失敗しました。'
+      );
+    }
+  };
+
   const getMealTypeLabel = (type: MealRecord['mealType']) => {
     const labels = {
       breakfast: '朝食',
@@ -94,61 +125,141 @@ export const FoodDetailScreen: React.FC<FoodDetailScreenProps> = ({ navigation, 
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-        </View>
+    <AnimatedBackground variant="neutral">
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.scrollView}>
+          <ResponsiveContainer>
+            {/* ヘッダー */}
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+              >
+                <Ionicons name="arrow-back" size={24} color={Colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.title, isDesktop && TextStyles.h1]}>食品詳細</Text>
+              {food.id.startsWith('custom_') ? (
+                <TouchableOpacity
+                  onPress={handleDeleteFood}
+                  style={styles.deleteButton}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="trash-outline" size={24} color={Colors.error} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.deleteButton} />
+              )}
+            </View>
 
-        {/* 食品情報カード */}
-        <FoodCard
-          food={food}
-          showNutrition={true}
-          style={styles.foodCard}
-        />
+            {/* 食品情報カード */}
+            <FoodCard
+              food={food}
+              showNutrition={true}
+              style={styles.foodCard}
+            />
 
-        {/* 計算結果 */}
-        <Card style={styles.nutritionCard}>
-          <Text style={styles.sectionTitle}>栄養成分（{amount}gあたり）</Text>
-          
-          <View style={styles.nutritionGrid}>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>
-                {calculatedNutrition.calories}
-              </Text>
-              <Text style={styles.nutritionLabel}>カロリー</Text>
+            {/* 入力フォーム */}
+            <GlassCard style={styles.inputCard}>
+              <Text style={styles.sectionTitle}>摂取量を入力</Text>
+              
+              <Input
+                label="量（グラム）"
+                value={amount}
+                onChangeText={handleAmountChange}
+                keyboardType="numeric"
+                style={styles.amountInput}
+              />
+
+              <View style={styles.mealTypeContainer}>
+                <Text style={styles.mealTypeLabel}>食事の種類</Text>
+                <View style={styles.mealTypeButtons}>
+                  <Button
+                    title="朝食"
+                    onPress={() => setMealType('breakfast')}
+                    variant={mealType === 'breakfast' ? 'primary' : 'outline'}
+                    style={styles.mealTypeButton}
+                  />
+                  <Button
+                    title="昨食"
+                    onPress={() => setMealType('lunch')}
+                    variant={mealType === 'lunch' ? 'primary' : 'outline'}
+                    style={styles.mealTypeButton}
+                  />
+                  <Button
+                    title="夕食"
+                    onPress={() => setMealType('dinner')}
+                    variant={mealType === 'dinner' ? 'primary' : 'outline'}
+                    style={styles.mealTypeButton}
+                  />
+                  <Button
+                    title="間食"
+                    onPress={() => setMealType('snack')}
+                    variant={mealType === 'snack' ? 'primary' : 'outline'}
+                    style={styles.mealTypeButton}
+                  />
+                </View>
+              </View>
+            </GlassCard>
+
+            {/* 計算結果 */}
+            <GlassCard style={styles.nutritionCard}>
+              <Text style={styles.sectionTitle}>栄養成分（{amount}gあたり）</Text>
+              
+              <View style={styles.nutritionGrid}>
+                <View style={styles.nutritionItem}>
+                  <Ionicons name="flame" size={24} color={Colors.primary} />
+                  <Text style={styles.nutritionValue}>
+                    {calculatedNutrition.calories}
+                  </Text>
+                  <Text style={styles.nutritionLabel}>カロリー</Text>
+                </View>
+                
+                <View style={styles.nutritionItem}>
+                  <Ionicons name="fish" size={24} color={Colors.primary} />
+                  <Text style={styles.nutritionValue}>
+                    {calculatedNutrition.protein}g
+                  </Text>
+                  <Text style={styles.nutritionLabel}>タンパク質</Text>
+                </View>
+                
+                <View style={styles.nutritionItem}>
+                  <Ionicons name="restaurant" size={24} color={Colors.secondary} />
+                  <Text style={styles.nutritionValue}>
+                    {calculatedNutrition.carbs}g
+                  </Text>
+                  <Text style={styles.nutritionLabel}>炭水化物</Text>
+                </View>
+                
+                <View style={styles.nutritionItem}>
+                  <Ionicons name="water" size={24} color={Colors.accent} />
+                  <Text style={styles.nutritionValue}>
+                    {calculatedNutrition.fat}g
+                  </Text>
+                  <Text style={styles.nutritionLabel}>脂質</Text>
+                </View>
+              </View>
+            </GlassCard>
+
+            {/* 追加ボタン */}
+            <View style={styles.addButtonContainer}>
+              <Button
+                title="食事記録を追加"
+                onPress={handleAddMeal}
+                variant="primary"
+                size="lg"
+              />
             </View>
-            
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>
-                {calculatedNutrition.protein}g
-              </Text>
-              <Text style={styles.nutritionLabel}>タンパク質</Text>
-            </View>
-            
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>
-                {calculatedNutrition.carbs}g
-              </Text>
-              <Text style={styles.nutritionLabel}>炭水化物</Text>
-            </View>
-            
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>
-                {calculatedNutrition.fat}g
-              </Text>
-              <Text style={styles.nutritionLabel}>脂質</Text>
-            </View>
-          </View>
-        </Card> 
-      </ScrollView>
-    </SafeAreaView>
+          </ResponsiveContainer>
+        </ScrollView>
+      </SafeAreaView>
+    </AnimatedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   
   scrollView: {
@@ -156,22 +267,39 @@ const styles = StyleSheet.create({
   },
   
   header: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+    marginBottom: Spacing.base,
+  },
+
+  backButton: {
+    padding: Spacing.xs,
+    zIndex: 10,
+  },
+
+  deleteButton: {
+    padding: Spacing.xs,
+    zIndex: 10,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   title: {
-    ...TextStyles.h1,
+    ...TextStyles.h2,
     color: Colors.text,
+    flex: 1,
+    marginHorizontal: Spacing.sm,
   },
   
   foodCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
   inputCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
@@ -208,7 +336,6 @@ const styles = StyleSheet.create({
   },
   
   nutritionCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
@@ -222,9 +349,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '45%',
     alignItems: 'center',
-    padding: Spacing.sm,
+    padding: Spacing.base,
     backgroundColor: Colors.surfaceVariant,
-    borderRadius: 8,
+    borderRadius: BorderRadius.lg,
   },
   
   nutritionValue: {
@@ -241,11 +368,7 @@ const styles = StyleSheet.create({
   },
   
   addButtonContainer: {
-    paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xl,
-  },
-  
-  addButton: {
     marginTop: Spacing.base,
   },
 });
