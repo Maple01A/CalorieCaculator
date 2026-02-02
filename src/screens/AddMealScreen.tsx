@@ -17,11 +17,14 @@ import { Button } from '../components/Button';
 import { FoodCard } from '../components/FoodCard';
 import { AddFoodModal } from '../components/AddFoodModal';
 import { AnimatedBackground } from '../components/AnimatedBackground';
+import { GlassCard } from '../components/GlassCard';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
 import { Food, MealRecord } from '../types';
 import { calculateNutritionForAmount } from '../utils/calorieCalculator';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface AddMealScreenProps {
   navigation: any;
@@ -48,6 +51,7 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
   const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>([]);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { isMobile, isDesktop } = useResponsive();
   const [availableFoods, setAvailableFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -200,29 +204,31 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
   return (
     <AnimatedBackground variant="primary">
       <SafeAreaView style={styles.container}>
+        {/* ヘッダー */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-          <Ionicons name="arrow-back" size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerTitle}>
-          <Ionicons
-            name={getMealTypeIcon(mealType) as any}
-            size={24}
-            color={Colors.primary}
-          />
-          <Text style={styles.title}>{getMealTypeLabel(mealType)}を追加</Text>
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerTitle}>
+            <Ionicons
+              name={getMealTypeIcon(mealType) as any}
+              size={24}
+              color={Colors.primary}
+            />
+            <Text style={styles.title}>{getMealTypeLabel(mealType)}を追加</Text>
+          </View>
+          <View style={styles.headerRight} />
         </View>
-        <View style={styles.headerRight} />
-      </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* 選択された食品リスト */}
-        {selectedFoods.length > 0 && (
-          <Card style={styles.selectedFoodsCard}>
-            <Text style={styles.sectionTitle}>選択された食品</Text>
+        <ScrollView style={styles.scrollView}>
+          <ResponsiveContainer>
+            {/* 選択された食品リスト */}
+            {selectedFoods.length > 0 && (
+              <GlassCard style={styles.selectedFoodsCard}>
+                <Text style={styles.sectionTitle}>選択された食品</Text>
 
             {selectedFoods.map((item, index) => (
               <View key={index} style={styles.selectedFoodItem}>
@@ -278,11 +284,11 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
                 )}
               </View>
             ))}
-          </Card>
-        )}
+              </GlassCard>
+            )}
 
-        {/* 食品を追加ボタン */}
-        <Card style={styles.addButtonCard}>
+            {/* 食品を追加ボタン */}
+            <GlassCard style={styles.addButtonCard}>
           <Button
             title="食品を追加"
             onPress={() => setShowFoodSearch(true)}
@@ -294,24 +300,27 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
             title="新しい食品を登録"
             onPress={() => setShowAddFoodModal(true)}
             variant="ghost"
-            style={styles.registerNewButton}
-            leftIcon={<Ionicons name="create-outline" size={20} color={Colors.secondary} />}
-          />
-        </Card>
-      </ScrollView>
+              style={styles.registerNewButton}
+              leftIcon={<Ionicons name="create-outline" size={20} color={Colors.secondary} />}
+            />
+            </GlassCard>
+          </ResponsiveContainer>
+        </ScrollView>
 
-      {/* 保存ボタン */}
-      {selectedFoods.length > 0 && (
-        <View style={styles.footer}>
-          <Button
-            title={`${getMealTypeLabel(mealType)}を保存 (${Math.round(totalNutrition.calories)} kcal)`}
-            onPress={handleSaveMeal}
-            variant="primary"
-            size="lg"
-            loading={saving}
-          />
-        </View>
-      )}
+        {/* 保存ボタン */}
+        {selectedFoods.length > 0 && (
+          <View style={styles.footer}>
+            <ResponsiveContainer>
+                  <Button
+                title={`${getMealTypeLabel(mealType)}を保存 (${Math.round(totalNutrition.calories)} kcal)`}
+                onPress={handleSaveMeal}
+                variant="primary"
+                size="lg"
+                loading={saving}
+              />
+            </ResponsiveContainer>
+          </View>
+        )}
 
       {/* 食品検索モーダル */}
       {showFoodSearch && (
@@ -421,8 +430,8 @@ const styles = StyleSheet.create({
   },
 
   selectedFoodsCard: {
-    marginHorizontal: Spacing.lg,
     marginTop: Spacing.base,
+    marginBottom: Spacing.base,
   },
 
   sectionTitle: {
@@ -490,8 +499,8 @@ const styles = StyleSheet.create({
   },
 
   totalCard: {
-    marginHorizontal: Spacing.lg,
     marginTop: Spacing.base,
+    marginBottom: Spacing.base,
     backgroundColor: Colors.primarySoft,
     borderColor: Colors.primaryLight,
     borderWidth: 2,
@@ -526,7 +535,6 @@ const styles = StyleSheet.create({
   },
 
   addButtonCard: {
-    marginHorizontal: Spacing.lg,
     marginTop: Spacing.base,
     marginBottom: Spacing.xl,
   },
@@ -536,7 +544,6 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.base,
     borderTopWidth: 1,
     borderTopColor: Colors.border,

@@ -73,7 +73,7 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('❌ API Error:', response.status, data);
+        console.error('API Error:', response.status, data);
         throw new Error(data.error || data.message || 'リクエストに失敗しました');
       }
 

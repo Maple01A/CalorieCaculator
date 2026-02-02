@@ -15,11 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { Card } from '../components/Card';
 import { AnimatedBackground } from '../components/AnimatedBackground';
+import { GlassCard } from '../components/GlassCard';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { Colors } from '../constants/colors';
 import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
 import { DailySummary, MealRecord } from '../types';
 import { calculateTotalNutrition } from '../utils/calorieCalculator';
+import { useResponsive } from '../hooks/useResponsive';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -32,6 +35,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const { isMobile, isDesktop } = useResponsive();
 
   useEffect(() => {
     loadHistory();
@@ -299,12 +303,15 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             />
           }
         >
-          <View style={styles.header}>
-            <Text style={styles.subtitle}>過去7日間の食事記録を確認しましょう</Text>
-        </View>
+          <ResponsiveContainer>
+            {/* ヘッダー */}
+            <View style={styles.header}>
+              <Text style={[styles.title, isDesktop && TextStyles.h1]}>履歴</Text>
+              <Text style={[styles.subtitle, isDesktop && { fontSize: 16 }]}>過去7日間の食事記録を確認しましょう</Text>
+            </View>
 
-        {/* 週間統計カード */}
-        <Card style={styles.statsCard}>
+            {/* 週間統計カード */}
+            <GlassCard style={styles.statsCard}>
           <Text style={styles.sectionTitle}>今週の統計</Text>
 
           <View style={styles.statsGrid}>
@@ -340,10 +347,10 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               <Text style={styles.statLabel}>記録日数</Text>
             </View>
           </View>
-        </Card>
+            </GlassCard>
 
-        {/* カロリー推移グラフ */}
-        <Card style={styles.chartCard}>
+            {/* カロリー推移グラフ */}
+            <GlassCard style={styles.chartCard}>
           <Text style={styles.sectionTitle}>今週のカロリー推移</Text>
           <Text style={styles.chartSubtitle}>過去7日間の摂取カロリーと目標</Text>
           
@@ -366,89 +373,89 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               fromZero
               segments={4}
               yAxisSuffix=" kcal"
-              formatYLabel={(value) => Math.round(Number(value)).toString()}
-            />
-          </ScrollView>
-          
-          <View style={styles.legend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
-              <Text style={styles.legendText}>摂取カロリー</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.textDisabled }]} />
-              <Text style={styles.legendText}>目標</Text>
-            </View>
-          </View>
-        </Card>
+                formatYLabel={(value) => Math.round(Number(value)).toString()}
+                />
+              </ScrollView>
+              
+              <View style={styles.legend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
+                  <Text style={styles.legendText}>摂取カロリー</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: Colors.textDisabled }]} />
+                  <Text style={styles.legendText}>目標</Text>
+                </View>
+              </View>
+            </GlassCard>
 
-        {/* 栄養素バランスグラフ */}
-        <Card style={styles.chartCard}>
-          <Text style={styles.sectionTitle}>今週の栄養バランス</Text>
-          <Text style={styles.chartSubtitle}>三大栄養素の合計摂取量（グラム）</Text>
-          
-          <BarChart
-            data={getNutritionChartData()}
-            width={screenWidth - 80}
-            height={240}
-            yAxisLabel=""
-            yAxisSuffix="g"
-            chartConfig={{
-              ...barChartConfig,
-              color: (opacity = 1, index) => {
-                const colors = [
-                  `rgba(33, 150, 243, ${opacity})`,  // Blue for protein
-                  `rgba(255, 152, 0, ${opacity})`,   // Orange for carbs
-                  `rgba(233, 30, 99, ${opacity})`    // Pink for fat
-                ];
-                return colors[index || 0];
-              },
-              propsForBackgroundLines: {
-                strokeDasharray: '5,5',
-                stroke: Colors.border,
-                strokeWidth: 1,
-                strokeOpacity: 0.2,
-              },
-            }}
-            style={styles.chart}
-            showValuesOnTopOfBars
-            withInnerLines={true}
-            fromZero
-            segments={4}
-          />
-        </Card>
+            {/* 栄養素バランスグラフ */}
+            <GlassCard style={styles.chartCard}>
+              <Text style={styles.sectionTitle}>今週の栄養バランス</Text>
+              <Text style={styles.chartSubtitle}>三大栄養素の合計摂取量（グラム）</Text>
+              
+              <BarChart
+                data={getNutritionChartData()}
+                width={isDesktop ? screenWidth * 0.5 : screenWidth - 80}
+                height={240}
+                yAxisLabel=""
+                yAxisSuffix="g"
+                chartConfig={{
+                  ...barChartConfig,
+                  color: (opacity = 1, index) => {
+                    const colors = [
+                      `rgba(33, 150, 243, ${opacity})`,  // Blue for protein
+                      `rgba(255, 152, 0, ${opacity})`,   // Orange for carbs
+                      `rgba(233, 30, 99, ${opacity})`    // Pink for fat
+                    ];
+                    return colors[index || 0];
+                  },
+                  propsForBackgroundLines: {
+                    strokeDasharray: '5,5',
+                    stroke: Colors.border,
+                    strokeWidth: 1,
+                    strokeOpacity: 0.2,
+                  },
+                }}
+                style={styles.chart}
+                showValuesOnTopOfBars
+                withInnerLines={true}
+                fromZero
+                segments={4}
+              />
+            </GlassCard>
 
-        {/* 日別詳細リスト */}
-        <Card style={styles.listCard}>
-          <Text style={styles.sectionTitle}>日別詳細</Text>
-          
-          {dailySummaries.map((summary, index) => {
-            const nutrition = calculateTotalNutrition(summary.meals);
-            const percentage = Math.round((nutrition.calories / summary.goalCalories) * 100);
-            const isExpanded = expandedDates.has(summary.date);
-            const groupedMeals = groupMealsByType(summary.meals);
-            
-            return (
-              <View key={summary.date}>
-                <TouchableOpacity
-                  style={styles.dayItem}
-                  onPress={() => toggleDateExpanded(summary.date)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.dayHeader}>
-                    <View style={styles.dayHeaderLeft}>
-                      <Text style={styles.dayDate}>
-                        {formatDateFull(summary.date)}
-                      </Text>
-                      {summary.meals.length > 0 && (
-                        <Text style={styles.dayMealsCount}>
-                          {summary.meals.length}件の記録
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.dayHeaderRight}>
-                      <View style={styles.dayStats}>
-                        <Text style={styles.dayCalories}>
+            {/* 日別詳細リスト */}
+            <GlassCard style={styles.listCard}>
+              <Text style={styles.sectionTitle}>日別詳細</Text>
+              
+              {dailySummaries.slice().reverse().map((summary, index) => {
+                const nutrition = calculateTotalNutrition(summary.meals);
+                const percentage = Math.round((nutrition.calories / summary.goalCalories) * 100);
+                const isExpanded = expandedDates.has(summary.date);
+                const groupedMeals = groupMealsByType(summary.meals);
+                
+                return (
+                  <View key={summary.date}>
+                    <TouchableOpacity
+                      style={styles.dayItem}
+                      onPress={() => toggleDateExpanded(summary.date)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.dayHeader}>
+                        <View style={styles.dayHeaderLeft}>
+                          <Text style={styles.dayDate}>
+                            {formatDateFull(summary.date)}
+                          </Text>
+                          {summary.meals.length > 0 && (
+                            <Text style={styles.dayMealsCount}>
+                              {summary.meals.length}件の記録
+                            </Text>
+                          )}
+                        </View>
+                        <View style={styles.dayHeaderRight}>
+                          <View style={styles.dayStats}>
+                            <Text style={styles.dayCalories}>
                           {Math.round(nutrition.calories)} kcal
                         </Text>
                         <Text
@@ -527,8 +534,9 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               </View>
             );
           })}
-        </Card>
-      </ScrollView>
+            </GlassCard>
+          </ResponsiveContainer>
+        </ScrollView>
       </SafeAreaView>
     </AnimatedBackground>
   );
@@ -555,12 +563,13 @@ const styles = StyleSheet.create({
   },
   
   header: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.base,
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+    marginBottom: Spacing.base,
   },
   
   title: {
-    ...TextStyles.h1,
+    ...TextStyles.h2,
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
@@ -571,17 +580,14 @@ const styles = StyleSheet.create({
   },
   
   statsCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
   chartCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
   listCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.xl,
   },
   

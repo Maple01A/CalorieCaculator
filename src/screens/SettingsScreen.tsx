@@ -16,11 +16,14 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { AnimatedBackground } from '../components/AnimatedBackground';
+import { GlassCard } from '../components/GlassCard';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { Colors } from '../constants/colors';
-import { Spacing } from '../constants/spacing';
+import { Spacing, BorderRadius } from '../constants/spacing';
 import { TextStyles } from '../constants/typography';
 import { UserSettings } from '../types';
 import { calculateRecommendedCalories } from '../utils/calorieCalculator';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface SettingsScreenProps {
   navigation: any;
@@ -37,6 +40,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { isMobile, isDesktop } = useResponsive();
 
   const currentUser = authService.getCurrentUser();
   const isGuest = authService.isGuestMode();
@@ -97,7 +101,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     console.log('Navigation object:', navigation);
     
     if (!navigation) {
-      console.error('❌ Navigation is not available');
+      console.error('Navigation is not available');
       Alert.alert('エラー', 'ページ遷移に失敗しました。アプリを再起動してください。');
       return;
     }
@@ -111,10 +115,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           text: 'アカウント作成',
           onPress: () => {
             try {
-              console.log('✅ Loginスクリーンに遷移します');
+              console.log('Loginスクリーンに遷移します');
               navigation.navigate('Login', { convertFromGuest: true });
             } catch (error) {
-              console.error('❌ Navigation error:', error);
+              console.error('Navigation error:', error);
               Alert.alert('エラー', 'ページ遷移に失敗しました');
             }
           },
@@ -159,13 +163,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     <AnimatedBackground variant="neutral">
       <SafeAreaView style={styles.container}>
         <ScrollView style={styles.scrollView}>
-          <View style={styles.header}>
-            <Text style={styles.subtitle}>カロリー目標を設定しましょう</Text>
-          </View>
+          <ResponsiveContainer>
+            <View style={styles.header}>
+              <Text style={[styles.title, isDesktop && TextStyles.h1]}>設定</Text>
+              <Text style={[styles.subtitle, isDesktop && { fontSize: 16 }]}>カロリー目標を設定しましょう</Text>
+            </View>
 
-          {/* アカウント情報 */}
-          {currentUser && !isGuest && (
-            <Card style={styles.accountCard}>
+            {/* アカウント情報 */}
+            {currentUser && !isGuest && (
+              <GlassCard style={styles.accountCard}>
               <View style={styles.accountHeader}>
                 <Ionicons 
                   name="person-circle-outline" 
@@ -190,12 +196,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 style={styles.signOutButton}
                 leftIcon={<Ionicons name="log-out-outline" size={18} color={Colors.error} />}
               />
-            </Card>
-          )}
+            </GlassCard>
+            )}
 
-        {/* 基本情報 */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>基本情報</Text>
+            {/* 基本情報 */}
+            <GlassCard style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>基本情報</Text>
           
           <View style={styles.basicInfoContainer}>
             <Input
@@ -222,11 +228,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
               style={styles.basicInfoInput}
             />
           </View>
-        </Card>
+            </GlassCard>
 
-        {/* 性別 */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>性別</Text>
+            {/* 性別 */}
+            <GlassCard style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>性別</Text>
           
           <View style={styles.genderContainer}>
             <Button
@@ -242,11 +248,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
               style={styles.genderButton}
             />
           </View>
-        </Card>
+            </GlassCard>
 
-                {/* カロリー目標 */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>カロリー目標</Text>
+            {/* カロリー目標 */}
+            <GlassCard style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>カロリー目標</Text>
           
           <Input
             label="1日のカロリー目標"
@@ -263,23 +269,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             style={styles.calculateButton}
           />
           
-          <Text style={styles.calculateNote}>
-            現在の設定に基づいて推奨カロリーを計算します
-          </Text>
-        </Card>
+              <Text style={styles.calculateNote}>
+                現在の設定に基づいて推奨カロリーを計算します
+              </Text>
+            </GlassCard>
 
-        {/* 保存ボタン */}
-        <View style={styles.saveButtonContainer}>
-          <Button
-            title="設定を保存"
-            onPress={handleSave}
-            variant="primary"
-            size="lg"
-            loading={saving}
-            style={styles.saveButton}
-          />
-        </View>
-      </ScrollView>
+            {/* 保存ボタン */}
+            <View style={styles.saveButtonContainer}>
+              <Button
+                title="設定を保存"
+                onPress={handleSave}
+                variant="primary"
+                size="lg"
+                loading={saving}
+                style={styles.saveButton}
+              />
+            </View>
+          </ResponsiveContainer>
+        </ScrollView>
       </SafeAreaView>
     </AnimatedBackground>
   );
@@ -306,12 +313,13 @@ const styles = StyleSheet.create({
   },
   
   header: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.base,
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+    marginBottom: Spacing.base,
   },
   
   title: {
-    ...TextStyles.h1,
+    ...TextStyles.h2,
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
@@ -322,7 +330,6 @@ const styles = StyleSheet.create({
   },
   
   sectionCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
@@ -365,7 +372,6 @@ const styles = StyleSheet.create({
   },
   
   saveButtonContainer: {
-    paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xl,
   },
   
@@ -374,7 +380,6 @@ const styles = StyleSheet.create({
   },
 
   accountCard: {
-    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.base,
   },
   
