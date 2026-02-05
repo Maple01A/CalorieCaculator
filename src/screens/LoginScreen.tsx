@@ -68,10 +68,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       // クラウドからデータを復元
       await cloudSyncService.syncFromCloud();
       
+      // ログイン成功後、ホーム画面に自動遷移
       Alert.alert('ログイン成功', 'データを同期しました', [
         {
           text: 'OK',
-          onPress: () => navigation.goBack(),
+          onPress: () => {
+            navigation.navigate('Main', { screen: 'Home' });
+          },
         },
       ]);
     } catch (error: any) {
@@ -99,23 +102,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       if (convertFromGuest) {
         console.log('🔄 ゲストデータをアカウントに変換中...');
         await authService.convertGuestToUser(email.trim(), password, displayName.trim() || 'ユーザー');
+        
+        // ローカルデータをクラウドに同期
+        await cloudSyncService.syncToCloud();
+        
+        Alert.alert('登録成功', 'ゲストデータをアカウントに保存しました。確認メールを送信しました。', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
       } else {
         await authService.signUpWithEmail(email.trim(), password, displayName.trim());
+        
+        // 登録成功後、パスワードをクリアしてログイン画面に切り替え
+        setPassword('');
+        setDisplayName('');
+        
+        Alert.alert(
+          '登録成功', 
+          'アカウントを作成しました。確認メールを送信しましたのでご確認ください。\n\nログインしてください。',
+          [
+            {
+              text: 'OK',
+              onPress: () => setIsSignUp(false), // ログイン画面に切り替え
+            },
+          ]
+        );
       }
-      
-      // ローカルデータをクラウドに同期
-      await cloudSyncService.syncToCloud();
-      
-      const message = convertFromGuest 
-        ? 'ゲストデータをアカウントに保存しました' 
-        : 'アカウントを作成しました';
-      
-      Alert.alert('登録成功', message, [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
     } catch (error: any) {
       console.error('登録エラー:', error);
       Alert.alert('登録エラー', error.message);

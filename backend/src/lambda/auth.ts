@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import { SignOptions } from 'jsonwebtoken';
@@ -8,10 +9,12 @@ import * as bcrypt from 'bcryptjs';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+const sesClient = new SESClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 
 const USERS_TABLE = process.env.USERS_TABLE || 'CalorieCalculator-Users';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@example.com';
 
 // CORSヘッダー
 const headers = {
@@ -68,6 +71,79 @@ const getUserByEmail = async (email: string) => {
   return result.Items && result.Items.length > 0 ? result.Items[0] : null;
 };
 
+// 確認メール送信
+const sendWelcomeEmail = async (email: string, displayName: string): Promise<void> => {
+  try {
+    const params = {
+      Source: FROM_EMAIL,
+      Destination: {
+        ToAddresses: [email],
+      },
+      Message: {
+        Subject: {
+          Data: 'カロリー計算アプリへようこそ！',
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Html: {
+            Data: `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+              </head>
+              <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h1 style="color: #007AFF;">カロリー計算アプリ</h1>
+                  <p>こんにちは、${displayName}さん</p>
+                  <p>カロリー計算アプリへようこそ！アカウント登録ありがとうございます。</p>
+                  <p>このアプリでは、以下の機能をご利用いただけます：</p>
+                  <ul>
+                    <li>食事の記録と自動カロリー計算</li>
+                    <li>日々のカロリー推移の確認</li>
+                    <li>食品データベースの検索</li>
+                    <li>クラウドでのデータ同期</li>
+                  </ul>
+                  <p>健康的な食生活をサポートします！</p>
+                  <p style="margin-top: 30px; color: #666; font-size: 12px;">
+                    このメールに心当たりがない場合は、お手数ですが削除してください。
+                  </p>
+                </div>
+              </body>
+              </html>
+            `,
+            Charset: 'UTF-8',
+          },
+          Text: {
+            Data: `
+こんにちは、${displayName}さん
+
+カロリー計算アプリへようこそ！アカウント登録ありがとうございます。
+
+このアプリでは、以下の機能をご利用いただけます：
+- 食事の記録と自動カロリー計算
+- 日々のカロリー推移の確認
+- 食品データベースの検索
+- クラウドでのデータ同期
+
+健康的な食生活をサポートします！
+
+このメールに心当たりがない場合は、お手数ですが削除してください。
+            `,
+            Charset: 'UTF-8',
+          },
+        },
+      },
+    };
+
+    await sesClient.send(new SendEmailCommand(params));
+    console.log('Welcome email sent to:', email);
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    // メール送信失敗はエラーとして扱わない（ユーザー登録自体は成功させる）
+  }
+};
+
 // 新規登録
 export const signUp = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -116,6 +192,11 @@ export const signUp = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       TableName: USERS_TABLE,
       Item: user,
     }));
+
+    // 確認メールを送信（非同期）
+    sendWelcomeEmail(email, user.displayName).catch(error => {
+      console.error('Email sending failed:', error);
+    });
 
     // JWTトークン生成
     const token = generateToken(userId, email);
