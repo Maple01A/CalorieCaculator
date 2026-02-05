@@ -128,33 +128,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   }
 
   const handleSignOut = async () => {
-    Alert.alert(
-      'ログアウト',
-      isGuest ? 'ゲストモードを終了しますか？ローカルデータは保持されます。' : 'ログアウトしますか？',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: 'ログアウト',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await authService.signOut();
-              Alert.alert('完了', 'ログアウトしました', [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // ホーム画面に戻る
-                    navigation.navigate('Home');
-                  },
-                },
-              ]);
-            } catch (error: any) {
-              Alert.alert('エラー', error.message);
-            }
-          },
-        },
-      ]
-    );
+    try {
+      await authService.signOut();
+      navigation.navigate('Home');
+    } catch (error: any) {
+      Alert.alert('エラー', error.message);
+    }
   };
 
   if (loading) {
