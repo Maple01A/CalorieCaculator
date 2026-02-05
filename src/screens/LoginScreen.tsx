@@ -69,14 +69,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       await cloudSyncService.syncFromCloud();
       
       // ログイン成功後、ホーム画面に自動遷移
-      Alert.alert('ログイン成功', 'データを同期しました', [
-        {
-          text: 'OK',
-          onPress: () => {
-            navigation.navigate('Main', { screen: 'Home' });
-          },
-        },
-      ]);
+      navigation.navigate('Main', { screen: 'Home' });
     } catch (error: any) {
       Alert.alert('ログインエラー', error.message);
     } finally {
