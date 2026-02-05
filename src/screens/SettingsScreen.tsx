@@ -139,7 +139,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           onPress: async () => {
             try {
               await authService.signOut();
-              Alert.alert('完了', 'ログアウトしました');
+              Alert.alert('完了', 'ログアウトしました', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    // ホーム画面に戻る
+                    navigation.navigate('Home');
+                  },
+                },
+              ]);
             } catch (error: any) {
               Alert.alert('エラー', error.message);
             }

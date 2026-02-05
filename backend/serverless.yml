@@ -17,6 +17,7 @@ provider:
     STAGE: ${self:provider.stage}
     JWT_SECRET: ${env:JWT_SECRET, 'your-secret-key-change-this-in-production'}
     JWT_EXPIRES_IN: ${env:JWT_EXPIRES_IN, '7d'}
+    FROM_EMAIL: ${env:FROM_EMAIL, 'noreply@example.com'}  # 送信元メールアドレス（SESで認証済みのもの）
   
   iam:
     role:
@@ -33,7 +34,14 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FOODS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEALS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.FOODS_TABLE}/index/*
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEALS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}/index/*
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: '*'  # SESでメール送信を許可
 
 plugins:
   - serverless-plugin-typescript
