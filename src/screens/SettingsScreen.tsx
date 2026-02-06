@@ -129,10 +129,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   const handleSignOut = async () => {
     try {
+      const isGuest = authService.isGuestMode();
+      
+      // ログアウト実行
       await authService.signOut();
-      navigation.navigate('Home');
+      
+      // ローカルデータをクリア（ゲストモード終了時も含む）
+      console.log('🗑️ ローカルデータをクリア中...');
+      await databaseService.clearAllMealRecords();
+      await databaseService.resetUserSettings();
+      
+      console.log('✅ ログアウト完了、データをクリアしました');
+      
+      // ホーム画面に戻る（リフレッシュフラグ付き）
+      navigation.navigate('Home', { refresh: Date.now() });
     } catch (error: any) {
-      Alert.alert('エラー', error.message);
+      console.error('ログアウトエラー:', error);
+      Alert.alert('エラー', error.message || 'ログアウトに失敗しました');
     }
   };
 
@@ -157,7 +170,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             </View>
 
             {/* アカウント情報 */}
-            {currentUser && !isGuest && (
+            {currentUser && (
               <GlassCard style={styles.accountCard}>
               <View style={styles.accountHeader}>
                 <Ionicons 
@@ -167,16 +180,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 />
                 <View style={styles.accountInfo}>
                   <Text style={styles.accountName}>
-                    {currentUser.displayName}
+                    {isGuest ? 'ゲストユーザー' : currentUser.displayName}
                   </Text>
-                  {currentUser.email && (
+                  {!isGuest && currentUser.email && (
                     <Text style={styles.accountEmail}>{currentUser.email}</Text>
+                  )}
+                  {isGuest && (
+                    <Button
+                      title="アカウント作成"
+                      onPress={handleConvertToUser}
+                      variant="primary"
+                      size="sm"
+                      style={styles.convertButton}
+                    />
                   )}
                 </View>
               </View>
 
               <Button
-                title="ログアウト"
+                title={isGuest ? 'ゲストモード終了' : 'ログアウト'}
                 onPress={handleSignOut}
                 variant="outline"
                 size="sm"

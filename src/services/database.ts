@@ -456,6 +456,38 @@ class DatabaseService {
     return categories.map((cat: any) => cat.category);
   }
 
+  // 全ての食事記録をクリア
+  async clearAllMealRecords(): Promise<void> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    try {
+      await this.db.runAsync('DELETE FROM meal_records');
+      console.log('✅ 全ての食事記録をクリアしました');
+    } catch (error) {
+      console.error('食事記録のクリアエラー:', error);
+      throw new Error('食事記録のクリアに失敗しました');
+    }
+  }
+
+  // ユーザー設定をデフォルトにリセット
+  async resetUserSettings(): Promise<void> {
+    if (!this.db) throw new Error('データベースが初期化されていません');
+
+    try {
+      const now = new Date().toISOString();
+      await this.db.runAsync('DELETE FROM user_settings');
+      await this.db.runAsync(
+        `INSERT INTO user_settings (daily_calorie_goal, weight, height, age, activity_level, gender, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [2000, 70, 170, 30, 'moderate', 'male', now, now]
+      );
+      console.log('✅ ユーザー設定をデフォルトにリセットしました');
+    } catch (error) {
+      console.error('ユーザー設定のリセットエラー:', error);
+      throw new Error('ユーザー設定のリセットに失敗しました');
+    }
+  }
+
   // データベースのクローズ
   async close(): Promise<void> {
     if (this.db) {
