@@ -147,11 +147,16 @@ class AuthService {
       if (!this.isGuestMode()) {
         await apiClient.signOut();
       }
+      
+      // AsyncStorageからユーザー情報を削除
       await AsyncStorage.removeItem('currentUser');
       await AsyncStorage.removeItem('isGuestMode');
+      await AsyncStorage.removeItem('authToken');
       
       this.currentUser = null;
       this.notifyListeners();
+      
+      console.log('✅ ログアウト完了');
     } catch (error: any) {
       throw this.handleAuthError(error);
     }

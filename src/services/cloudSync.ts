@@ -19,10 +19,7 @@ class CloudSyncService {
 
       // 設定を同期
       await apiClient.updateSettings({
-        targetCalories: settings.targetCalories,
-        targetProtein: settings.targetProtein,
-        targetCarbs: settings.targetCarbs,
-        targetFat: settings.targetFat,
+        targetCalories: settings.dailyCalorieGoal,
         height: settings.height,
         weight: settings.weight,
         age: settings.age,
@@ -67,14 +64,16 @@ class CloudSyncService {
     }
 
     try {
+      // ローカルデータをクリアしてからクラウドデータを復元
+      console.log('🔄 ローカルデータをクリア中...');
+      await databaseService.clearAllMealRecords();
+      await databaseService.resetUserSettings();
+      
       // 設定を復元
       const settings = await apiClient.getSettings();
       if (settings) {
         await databaseService.updateUserSettings({
-          targetCalories: settings.target_calories,
-          targetProtein: settings.target_protein,
-          targetCarbs: settings.target_carbs,
-          targetFat: settings.target_fat,
+          dailyCalorieGoal: settings.target_calories,
           height: settings.height,
           weight: settings.weight,
           age: settings.age,
@@ -115,7 +114,8 @@ class CloudSyncService {
       console.log('クラウドから復元完了');
     } catch (error) {
       console.error('クラウドから復元エラー:', error);
-      throw new Error('データの復元に失敗しました');
+      // エラーが発生してもローカルはクリアされているので、デフォルト状態で続行
+      console.log('⚠️ クラウドからの復元に失敗しましたが、ローカルデータは初期化されました');
     }
   }
 

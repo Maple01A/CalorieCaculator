@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
 import { cloudSyncService } from '../services/cloudSync';
+import { databaseService } from '../services/database';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -37,14 +38,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   }, []);
 
   useEffect(() => {
-    // ゲストからの変換時はメッセージを表示
+    // ゲストからの変換時はログを出力
     if (convertFromGuest) {
       console.log('🔄 ゲストからアカウント変換モード');
-      Alert.alert(
-        'アカウント作成',
-        'ゲストデータをアカウントに保存します。メールアドレスとパスワードを設定してください。',
-        [{ text: 'OK' }]
-      );
     }
   }, [convertFromGuest]);
 
@@ -96,32 +92,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         console.log('🔄 ゲストデータをアカウントに変換中...');
         await authService.convertGuestToUser(email.trim(), password, displayName.trim() || 'ユーザー');
         
-        // ローカルデータをクラウドに同期
+        // ローカルデータをクラウドに同期（ゲストデータを保存）
         await cloudSyncService.syncToCloud();
         
-        Alert.alert('登録成功', 'ゲストデータをアカウントに保存しました。確認メールを送信しました。', [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        // ホーム画面に遷移
+        navigation.navigate('Main', { screen: 'Home' });
       } else {
         await authService.signUpWithEmail(email.trim(), password, displayName.trim());
         
-        // 登録成功後、パスワードをクリアしてログイン画面に切り替え
-        setPassword('');
-        setDisplayName('');
+        // 新規登録の場合はローカルデータをクリアしてデフォルト状態にする
+        console.log('🆕 新規登録完了、ローカルデータを初期化中...');
+        await databaseService.clearAllMealRecords();
+        await databaseService.resetUserSettings();
         
-        Alert.alert(
-          '登録成功', 
-          'アカウントを作成しました。確認メールを送信しましたのでご確認ください。\n\nログインしてください。',
-          [
-            {
-              text: 'OK',
-              onPress: () => setIsSignUp(false), // ログイン画面に切り替え
-            },
-          ]
-        );
+        // ホーム画面に遷移
+        navigation.navigate('Main', { screen: 'Home' });
       }
     } catch (error: any) {
       console.error('登録エラー:', error);
@@ -136,12 +121,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       setLoading(true);
       await authService.startAsGuest();
       
-      Alert.alert('ゲストモード', 'ゲストとして利用を開始しました', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      // ゲストモード開始時もローカルデータを初期化
+      console.log('👤 ゲストモード開始、ローカルデータを初期化中...');
+      await databaseService.clearAllMealRecords();
+      await databaseService.resetUserSettings();
+      
+      // ホーム画面に遷移
+      navigation.navigate('Main', { screen: 'Home' });
     } catch (error: any) {
       Alert.alert('エラー', error.message);
     } finally {
