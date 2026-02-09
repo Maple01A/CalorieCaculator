@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import type { User } from './auth';
 
 // 環境変数からAPI URLを取得（フォールバックとしてローカルURLを使用）
 const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 
@@ -174,11 +175,42 @@ class ApiClient {
   }
 
   // 既存のメソッド（互換性のため残す）
-  async getMealsByDateRange(startDate: Date, endDate: Date) {
-    // TODO: userIdを適切に取得する必要がある
-    const start = startDate.toISOString().split('T')[0];
-    const end = endDate.toISOString().split('T')[0];
-    return this.getMeals('current-user', start, end);
+  // userIdはcloudSync.tsで渡す必要がある
+  async getMealsByDateRange(startDate: Date, endDate: Date, userId: string) {
+    try {
+      if (!userId) {
+        console.warn('ユーザーIDが提供されていないため、空の配列を返します');
+        return [];
+      }
+      
+      const start = startDate.toISOString().split('T')[0];
+      const end = endDate.toISOString().split('T')[0];
+      
+      console.log(`📅 食事記録を取得中: ${start} から ${end} (User: ${userId})`);
+      
+      // 日付範囲の各日のデータを取得
+      const meals = [];
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        try {
+          const summary = await this.getDailySummary(userId, dateStr);
+          if (summary && summary.meals && summary.meals.length > 0) {
+            meals.push(...summary.meals);
+          }
+        } catch (error) {
+          console.warn(`${dateStr}のデータ取得に失敗:`, error);
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      console.log(`✅ ${meals.length}件の食事記録を取得しました`);
+      return meals;
+    } catch (error) {
+      console.error('getMealsByDateRangeエラー:', error);
+      return [];
+    }
   }
 
   async createMeal(meal: any) {

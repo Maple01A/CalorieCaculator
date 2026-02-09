@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
+import { authService } from '../services/auth';
+import { apiClient } from '../services/apiClient';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -144,6 +146,8 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
     try {
       setSaving(true);
       const timestamp = new Date();
+      const currentUser = authService.getCurrentUser();
+      const isGuest = authService.isGuestMode();
 
       // 各食品を個別に記録として保存
       for (const item of selectedFoods) {
@@ -159,7 +163,31 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
           mealType,
         };
 
+        // ローカルに保存
         await databaseService.addMealRecord(mealRecord);
+        
+        // ログイン中の場合はクラウドにも保存
+        if (currentUser && !isGuest) {
+          try {
+            console.log('🔄 クラウドに同期中:', mealRecord.foodName);
+            await apiClient.addMeal({
+              userId: currentUser.id,
+              foodId: mealRecord.foodId,
+              foodName: mealRecord.foodName,
+              amount: mealRecord.amount,
+              calories: mealRecord.calories,
+              protein: mealRecord.protein,
+              carbs: mealRecord.carbs,
+              fat: mealRecord.fat,
+              mealType: mealRecord.mealType,
+              timestamp: timestamp.toISOString(),
+            });
+            console.log('✅ クラウドに保存しました:', mealRecord.foodName);
+          } catch (cloudError) {
+            console.warn('クラウド同期に失敗:', cloudError);
+            // クラウド同期失敗でもローカルには保存済みなので続行
+          }
+        }
       }
 
       // 保存成功後、自動的にホーム画面に戻る
