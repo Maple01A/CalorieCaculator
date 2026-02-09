@@ -40,7 +40,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   useEffect(() => {
     // ゲストからの変換時はログを出力
     if (convertFromGuest) {
-      console.log('🔄 ゲストからアカウント変換モード');
+      // ゲストからアカウント変換モード
     }
   }, [convertFromGuest]);
 
@@ -64,7 +64,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       await authService.signInWithEmail(email.trim(), password);
       
       // クラウドからデータを復元
-      console.log('📥 クラウドからデータを同期中...');
       await cloudSyncService.syncFromCloud();
       
       // 画面遷移前に少し待つ
@@ -99,7 +98,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       
       // ゲストからの変換か新規登録かで処理を分岐
       if (convertFromGuest) {
-        console.log('🔄 ゲストデータをアカウントに変換中...');
         await authService.convertGuestToUser(email.trim(), password, displayName.trim() || 'ユーザー');
         
         // ローカルデータをクラウドに同期（ゲストデータを保存）
@@ -111,7 +109,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         await authService.signUpWithEmail(email.trim(), password, displayName.trim());
         
         // 新規登録の場合はローカルデータをクリアしてデフォルト状態にする
-        console.log('🆕 新規登録完了、ローカルデータを初期化中...');
         await databaseService.clearAllMealRecords();
         await databaseService.resetUserSettings();
         
@@ -132,7 +129,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       await authService.startAsGuest();
       
       // ゲストモード開始時もローカルデータを初期化
-      console.log('👤 ゲストモード開始、ローカルデータを初期化中...');
       await databaseService.clearAllMealRecords();
       await databaseService.resetUserSettings();
       

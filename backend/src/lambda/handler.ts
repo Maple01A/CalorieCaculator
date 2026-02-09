@@ -72,6 +72,39 @@ export const getFoodById = async (event: APIGatewayProxyEvent): Promise<APIGatew
   }
 };
 
+// 食品追加
+export const addFood = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const { id, name, caloriesPer100g, protein, carbs, fat, category } = body;
+
+    if (!id || !name || caloriesPer100g === undefined) {
+      return response(400, { error: '必須フィールドが不足しています' });
+    }
+
+    const food = {
+      id,
+      name,
+      caloriesPer100g,
+      protein: protein || 0,
+      carbs: carbs || 0,
+      fat: fat || 0,
+      category: category || 'その他',
+      createdAt: new Date().toISOString(),
+    };
+
+    await docClient.send(new PutCommand({
+      TableName: FOODS_TABLE,
+      Item: food,
+    }));
+
+    return response(201, { id, message: '食品を追加しました', food });
+  } catch (error) {
+    console.error('Error adding food:', error);
+    return response(500, { error: '食品追加中にエラーが発生しました' });
+  }
+};
+
 // 食事記録追加
 export const addMealRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {

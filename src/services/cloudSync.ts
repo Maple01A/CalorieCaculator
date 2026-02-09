@@ -49,7 +49,6 @@ class CloudSyncService {
         await apiClient.createMealsBatch(mealsToSync);
       }
 
-      console.log('クラウド同期完了');
     } catch (error) {
       console.error('クラウド同期エラー:', error);
       throw new Error('データの同期に失敗しました');
@@ -60,20 +59,15 @@ class CloudSyncService {
   async syncFromCloud(): Promise<void> {
     const user = authService.getCurrentUser();
     if (!user || user.isGuest) {
-      console.log('⚠️ ゲストモードまたは未ログインのため同期をスキップ');
       return;
     }
 
     try {
-      console.log('🔄 クラウドからデータを同期開始...');
-      
       // ローカルデータをクリア
-      console.log('📝 ローカルデータをクリア中...');
       await databaseService.clearAllMealRecords();
       await databaseService.resetUserSettings();
       
       // 設定を復元
-      console.log('⚙️ 設定を復元中...');
       try {
         const settings = await apiClient.getSettings(user.id);
         if (settings) {
@@ -85,22 +79,18 @@ class CloudSyncService {
             gender: settings.gender,
             activityLevel: settings.activityLevel || settings.activity_level,
           });
-          console.log('✅ 設定を復元しました');
         }
       } catch (error) {
         console.warn('設定の復元に失敗:', error);
       }
       
       // 食事記録を復元（過去30日分）
-      console.log('🍽️ 食事記録を復元中...');
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const today = new Date();
 
       try {
         const meals = await apiClient.getMealsByDateRange(thirtyDaysAgo, today, user.id);
-        
-        console.log(`📊 ${meals.length}件の食事記録を復元中...`);
         
         for (const mealData of meals) {
           const meal: Omit<MealRecord, 'id'> = {
@@ -121,13 +111,9 @@ class CloudSyncService {
             console.warn('記録の追加に失敗:', meal.foodName, error);
           }
         }
-        
-        console.log('✅ 食事記録を復元しました');
       } catch (error) {
         console.warn('食事記録の復元に失敗:', error);
       }
-
-      console.log('✅ クラウド同期完了');
     } catch (error) {
       console.error('❌ クラウド同期エラー:', error);
       throw new Error('データの同期に失敗しました');

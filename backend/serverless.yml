@@ -98,6 +98,14 @@ functions:
           method: get
           cors: true
   
+  addFood:
+    handler: src/lambda/handler.addFood
+    events:
+      - http:
+          path: /foods
+          method: post
+          cors: true
+  
   # 食事記録関連API
   addMealRecord:
     handler: src/lambda/handler.addMealRecord

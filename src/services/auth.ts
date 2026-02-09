@@ -155,8 +155,6 @@ class AuthService {
       
       this.currentUser = null;
       this.notifyListeners();
-      
-      console.log('✅ ログアウト完了');
     } catch (error: any) {
       throw this.handleAuthError(error);
     }

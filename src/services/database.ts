@@ -373,12 +373,10 @@ class DatabaseService {
     if (!this.db) throw new Error('データベースが初期化されていません');
 
     try {
-      console.log('🗑️ 食事記録を削除:', id);
       const result = await this.db.runAsync(
         'DELETE FROM meal_records WHERE id = ?',
         [id]
       );
-      console.log('削除結果:', result);
     } catch (error) {
       console.error('食事記録の削除エラー:', error);
       throw new Error('食事記録の削除に失敗しました');
@@ -398,11 +396,10 @@ class DatabaseService {
       );
       
       if (records.length > 0) {
-        const result = await this.db.runAsync(
+        await this.db.runAsync(
           'DELETE FROM meal_records WHERE food_id = ?',
           [foodId]
         );
-        console.log('食事記録削除結果:', result);
       }
     } catch (error) {
       console.error('食事記録の削除エラー:', error);
@@ -462,7 +459,6 @@ class DatabaseService {
 
     try {
       await this.db.runAsync('DELETE FROM meal_records');
-      console.log('✅ 全ての食事記録をクリアしました');
     } catch (error) {
       console.error('食事記録のクリアエラー:', error);
       throw new Error('食事記録のクリアに失敗しました');
@@ -481,7 +477,6 @@ class DatabaseService {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [2000, 70, 170, 30, 'moderate', 'male', now, now]
       );
-      console.log('✅ ユーザー設定をデフォルトにリセットしました');
     } catch (error) {
       console.error('ユーザー設定のリセットエラー:', error);
       throw new Error('ユーザー設定のリセットに失敗しました');

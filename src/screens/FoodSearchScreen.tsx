@@ -72,7 +72,8 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation, 
       setLoading(true);
       // すべての食品を取得（検索クエリなし）
       const results = await databaseService.searchFoods('');
-      setFoods(results);
+      // 検索クエリが空の場合は最初の5件のみ表示
+      setFoods(searchQuery.trim() === '' ? results.slice(0, 5) : results);
     } catch (error) {
       console.error('食品一覧の読み込みに失敗しました:', error);
       Alert.alert('エラー', '食品一覧の読み込みに失敗しました');
@@ -136,7 +137,7 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation, 
       <View style={styles.listHeader}>
         <Text style={[styles.listHeaderText, isDesktop && { fontSize: 16 }]}>
           {searchQuery.trim() === '' 
-            ? `全${foods.length}件の食品`
+            ? `食品`
             : `${foods.length}件の検索結果`
           }
         </Text>
