@@ -256,13 +256,6 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
               />
             </View>
           </Card>
-
-          <View style={styles.noteCard}>
-            <Ionicons name="information-circle-outline" size={20} color={Colors.info} />
-            <Text style={styles.noteText}>
-              * は必須項目です。栄養成分の詳細は任意で入力できます。
-            </Text>
-          </View>
         </ScrollView>
 
         <View style={styles.footer}>
