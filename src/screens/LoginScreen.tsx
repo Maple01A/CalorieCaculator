@@ -59,14 +59,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
 
     try {
       setLoading(true);
+      
+      // ログイン
       await authService.signInWithEmail(email.trim(), password);
       
       // クラウドからデータを復元
+      console.log('📥 クラウドからデータを同期中...');
       await cloudSyncService.syncFromCloud();
       
+      // 画面遷移前に少し待つ
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // ログイン成功後、ホーム画面に自動遷移
-      navigation.navigate('Main', { screen: 'Home' });
+      navigation.navigate('Main', { 
+        screen: 'Home',
+        params: { refresh: Date.now() }
+      });
     } catch (error: any) {
+      console.error('ログインエラー:', error);
       Alert.alert('ログインエラー', error.message);
     } finally {
       setLoading(false);

@@ -40,13 +40,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [isGuest, setIsGuest] = useState(authService.isGuestMode());
   const { isMobile, isDesktop } = useResponsive();
-
-  const currentUser = authService.getCurrentUser();
-  const isGuest = authService.isGuestMode();
 
   useEffect(() => {
     loadSettings();
+    
+    // 認証状態の監視
+    const unsubscribe = authService.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      setIsGuest(authService.isGuestMode());
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const loadSettings = async () => {
@@ -141,12 +148,31 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       
       console.log('✅ ログアウト完了、データをクリアしました');
       
-      // ホーム画面に戻る（リフレッシュフラグ付き）
-      navigation.navigate('Home', { refresh: Date.now() });
+      // 状態を更新
+      setCurrentUser(null);
+      setIsGuest(false);
+      
+      Alert.alert(
+        '完了',
+        'ログアウトしました',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // ホーム画面に戻る（リフレッシュフラグ付き）
+              navigation.navigate('Home', { refresh: Date.now() });
+            }
+          }
+        ]
+      );
     } catch (error: any) {
       console.error('ログアウトエラー:', error);
       Alert.alert('エラー', error.message || 'ログアウトに失敗しました');
     }
+  };
+  
+  const handleLogin = () => {
+    navigation.navigate('Login');
   };
 
   if (loading) {
@@ -172,40 +198,40 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             {/* アカウント情報 */}
             {currentUser && (
               <GlassCard style={styles.accountCard}>
-              <View style={styles.accountHeader}>
-                <Ionicons 
-                  name="person-circle-outline" 
-                  size={48} 
-                  color={Colors.primary} 
-                />
-                <View style={styles.accountInfo}>
-                  <Text style={styles.accountName}>
-                    {isGuest ? 'ゲストユーザー' : currentUser.displayName}
-                  </Text>
-                  {!isGuest && currentUser.email && (
-                    <Text style={styles.accountEmail}>{currentUser.email}</Text>
-                  )}
-                  {isGuest && (
-                    <Button
-                      title="アカウント作成"
-                      onPress={handleConvertToUser}
-                      variant="primary"
-                      size="sm"
-                      style={styles.convertButton}
-                    />
-                  )}
+                <View style={styles.accountHeader}>
+                  <Ionicons 
+                    name="person-circle-outline" 
+                    size={48} 
+                    color={Colors.primary} 
+                  />
+                  <View style={styles.accountInfo}>
+                    <Text style={styles.accountName}>
+                      {isGuest ? 'ゲストユーザー' : currentUser.displayName}
+                    </Text>
+                    {!isGuest && currentUser.email && (
+                      <Text style={styles.accountEmail}>{currentUser.email}</Text>
+                    )}
+                    {isGuest && (
+                      <Button
+                        title="アカウント作成"
+                        onPress={handleConvertToUser}
+                        variant="primary"
+                        size="sm"
+                        style={styles.convertButton}
+                      />
+                    )}
+                  </View>
                 </View>
-              </View>
 
-              <Button
-                title={isGuest ? 'ゲストモード終了' : 'ログアウト'}
-                onPress={handleSignOut}
-                variant="outline"
-                size="sm"
-                style={styles.signOutButton}
-                leftIcon={<Ionicons name="log-out-outline" size={18} color={Colors.error} />}
-              />
-            </GlassCard>
+                <Button
+                  title={isGuest ? 'ゲストモード終了' : 'ログアウト'}
+                  onPress={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  style={styles.signOutButton}
+                  leftIcon={<Ionicons name="log-out-outline" size={18} color={Colors.error} />}
+                />
+              </GlassCard>
             )}
 
             {/* 基本情報 */}

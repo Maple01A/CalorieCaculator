@@ -59,63 +59,78 @@ class CloudSyncService {
   // クラウドからデータを復元
   async syncFromCloud(): Promise<void> {
     const user = authService.getCurrentUser();
-    if (!user) {
-      throw new Error('ログインが必要です');
+    if (!user || user.isGuest) {
+      console.log('⚠️ ゲストモードまたは未ログインのため同期をスキップ');
+      return;
     }
 
     try {
-      // ローカルデータをクリアしてからクラウドデータを復元
-      console.log('🔄 ローカルデータをクリア中...');
+      console.log('🔄 クラウドからデータを同期開始...');
+      
+      // ローカルデータをクリア
+      console.log('📝 ローカルデータをクリア中...');
       await databaseService.clearAllMealRecords();
       await databaseService.resetUserSettings();
       
       // 設定を復元
-      const settings = await apiClient.getSettings();
-      if (settings) {
-        await databaseService.updateUserSettings({
-          dailyCalorieGoal: settings.target_calories,
-          height: settings.height,
-          weight: settings.weight,
-          age: settings.age,
-          gender: settings.gender,
-          activityLevel: settings.activity_level,
-        });
+      console.log('⚙️ 設定を復元中...');
+      try {
+        const settings = await apiClient.getSettings(user.id);
+        if (settings) {
+          await databaseService.updateUserSettings({
+            dailyCalorieGoal: settings.dailyCalorieGoal || settings.target_calories || 2000,
+            height: settings.height,
+            weight: settings.weight,
+            age: settings.age,
+            gender: settings.gender,
+            activityLevel: settings.activityLevel || settings.activity_level,
+          });
+          console.log('✅ 設定を復元しました');
+        }
+      } catch (error) {
+        console.warn('設定の復元に失敗:', error);
       }
-
+      
       // 食事記録を復元（過去30日分）
+      console.log('🍽️ 食事記録を復元中...');
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const today = new Date();
 
-      const meals = await apiClient.getMealsByDateRange(thirtyDaysAgo, today);
-
-      for (const mealData of meals) {
-        const meal: Omit<MealRecord, 'id'> = {
-          foodId: mealData.food_id,
-          foodName: mealData.food_name,
-          amount: mealData.amount,
-          calories: mealData.calories,
-          protein: mealData.protein,
-          carbs: mealData.carbs,
-          fat: mealData.fat,
-          timestamp: new Date(mealData.timestamp),
-          mealType: mealData.meal_type,
-        };
-
-        // ローカルに存在しない場合のみ追加
-        try {
-          await databaseService.addMealRecord(meal);
-        } catch (error) {
-          // 既に存在する場合はスキップ
-          console.log('既に存在する記録:', meal.foodName);
+      try {
+        const meals = await apiClient.getMealsByDateRange(thirtyDaysAgo, today, user.id);
+        
+        console.log(`📊 ${meals.length}件の食事記録を復元中...`);
+        
+        for (const mealData of meals) {
+          const meal: Omit<MealRecord, 'id'> = {
+            foodId: mealData.foodId || mealData.food_id,
+            foodName: mealData.foodName || mealData.food_name,
+            amount: mealData.amount,
+            calories: mealData.calories,
+            protein: mealData.protein || 0,
+            carbs: mealData.carbs || 0,
+            fat: mealData.fat || 0,
+            timestamp: new Date(mealData.timestamp),
+            mealType: mealData.mealType || mealData.meal_type,
+          };
+          
+          try {
+            await databaseService.addMealRecord(meal);
+          } catch (error) {
+            console.warn('記録の追加に失敗:', meal.foodName, error);
+          }
         }
+        
+        console.log('✅ 食事記録を復元しました');
+      } catch (error) {
+        console.warn('食事記録の復元に失敗:', error);
       }
 
-      console.log('クラウドから復元完了');
+      console.log('✅ クラウド同期完了');
     } catch (error) {
-      console.error('クラウドから復元エラー:', error);
-      // エラーが発生してもローカルはクリアされているので、デフォルト状態で続行
-      console.log('⚠️ クラウドからの復元に失敗しましたが、ローカルデータは初期化されました');
+      console.error('❌ クラウド同期エラー:', error);
+      throw new Error('データの同期に失敗しました');
     }
   }
 

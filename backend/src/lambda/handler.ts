@@ -76,7 +76,7 @@ export const getFoodById = async (event: APIGatewayProxyEvent): Promise<APIGatew
 export const addMealRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     const body = JSON.parse(event.body || '{}');
-    const { userId, foodId, amount, mealType, timestamp } = body;
+    const { userId, foodId, foodName, amount, calories, protein, carbs, fat, mealType, timestamp } = body;
 
     if (!userId || !foodId || !amount || !mealType) {
       return response(400, { error: '必須フィールドが不足しています' });
@@ -87,7 +87,12 @@ export const addMealRecord = async (event: APIGatewayProxyEvent): Promise<APIGat
       id: mealId,
       userId,
       foodId,
+      foodName: foodName || '',
       amount,
+      calories: calories || 0,
+      protein: protein || 0,
+      carbs: carbs || 0,
+      fat: fat || 0,
       mealType,
       timestamp: timestamp || new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -133,37 +138,68 @@ export const getDailySummary = async (event: APIGatewayProxyEvent): Promise<APIG
 
     const meals = result.Items || [];
     
-    // カロリー合計を計算（食品データと結合が必要）
+    // 栄養情報の合計を計算
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
+    
+    // 食事記録に栄養情報が含まれている場合はそれを使用し、
+    // ない場合は食品マスタから取得
+    const mealsWithFoodInfo = [];
 
     for (const meal of meals) {
-      const foodResult = await docClient.send(new GetCommand({
-        TableName: FOODS_TABLE,
-        Key: { id: meal.foodId },
-      }));
+      // すでに栄養情報が保存されている場合
+      if (meal.calories !== undefined && meal.foodName) {
+        totalCalories += meal.calories || 0;
+        totalProtein += meal.protein || 0;
+        totalCarbs += meal.carbs || 0;
+        totalFat += meal.fat || 0;
+        
+        mealsWithFoodInfo.push({
+          ...meal,
+        });
+      } else {
+        // 古いデータの場合は食品マスタから取得
+        const foodResult = await docClient.send(new GetCommand({
+          TableName: FOODS_TABLE,
+          Key: { id: meal.foodId },
+        }));
 
-      if (foodResult.Item) {
-        const food = foodResult.Item;
-        const multiplier = meal.amount / 100;
-        totalCalories += food.caloriesPer100g * multiplier;
-        totalProtein += (food.protein || 0) * multiplier;
-        totalCarbs += (food.carbs || 0) * multiplier;
-        totalFat += (food.fat || 0) * multiplier;
+        if (foodResult.Item) {
+          const food = foodResult.Item;
+          const multiplier = meal.amount / 100;
+          const mealCalories = Math.round(food.caloriesPer100g * multiplier);
+          const mealProtein = Math.round((food.protein || 0) * multiplier * 10) / 10;
+          const mealCarbs = Math.round((food.carbs || 0) * multiplier * 10) / 10;
+          const mealFat = Math.round((food.fat || 0) * multiplier * 10) / 10;
+          
+          totalCalories += mealCalories;
+          totalProtein += mealProtein;
+          totalCarbs += mealCarbs;
+          totalFat += mealFat;
+          
+          mealsWithFoodInfo.push({
+            ...meal,
+            foodName: food.name,
+            calories: mealCalories,
+            protein: mealProtein,
+            carbs: mealCarbs,
+            fat: mealFat,
+          });
+        }
       }
     }
 
     return response(200, {
       date,
-      meals,
+      meals: mealsWithFoodInfo,
       summary: {
         totalCalories: Math.round(totalCalories),
         totalProtein: Math.round(totalProtein * 10) / 10,
         totalCarbs: Math.round(totalCarbs * 10) / 10,
         totalFat: Math.round(totalFat * 10) / 10,
-        mealCount: meals.length,
+        mealCount: mealsWithFoodInfo.length,
       },
     });
   } catch (error) {
