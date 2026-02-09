@@ -7,8 +7,6 @@ const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl ||
                      process.env.EXPO_PUBLIC_API_URL || 
                      'http://localhost:3000';
 
-console.log('🌐 API Base URL:', API_BASE_URL);
-
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -63,7 +61,6 @@ class ApiClient {
     }
 
     const fullUrl = `${this.baseUrl}${endpoint}`;
-    console.log('🔗 API Request:', fullUrl);
 
     try {
       const response = await fetch(fullUrl, {
@@ -136,6 +133,13 @@ class ApiClient {
     });
   }
 
+  async addFood(food: any) {
+    return this.request<{ message: string; id: string; food: any }>('/foods', {
+      method: 'POST',
+      body: JSON.stringify(food),
+    });
+  }
+
   // Settings endpoints
   async getSettings(userId: string) {
     return this.request<any>(`/users/${userId}/settings`, {
@@ -186,8 +190,6 @@ class ApiClient {
       const start = startDate.toISOString().split('T')[0];
       const end = endDate.toISOString().split('T')[0];
       
-      console.log(`📅 食事記録を取得中: ${start} から ${end} (User: ${userId})`);
-      
       // 日付範囲の各日のデータを取得
       const meals = [];
       const currentDate = new Date(startDate);
@@ -205,7 +207,6 @@ class ApiClient {
         currentDate.setDate(currentDate.getDate() + 1);
       }
       
-      console.log(`✅ ${meals.length}件の食事記録を取得しました`);
       return meals;
     } catch (error) {
       console.error('getMealsByDateRangeエラー:', error);

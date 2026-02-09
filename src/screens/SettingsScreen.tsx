@@ -104,9 +104,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   };
 
   const handleConvertToUser = () => {
-    console.log('🔄 アカウント作成ボタンが押されました');
-    console.log('Navigation object:', navigation);
-    
     if (!navigation) {
       console.error('Navigation is not available');
       Alert.alert('エラー', 'ページ遷移に失敗しました。アプリを再起動してください。');
@@ -122,7 +119,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           text: 'アカウント作成',
           onPress: () => {
             try {
-              console.log('Loginスクリーンに遷移します');
               navigation.navigate('Login', { convertFromGuest: true });
             } catch (error) {
               console.error('Navigation error:', error);
@@ -142,11 +138,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       await authService.signOut();
       
       // ローカルデータをクリア（ゲストモード終了時も含む）
-      console.log('🗑️ ローカルデータをクリア中...');
       await databaseService.clearAllMealRecords();
       await databaseService.resetUserSettings();
-      
-      console.log('✅ ログアウト完了、データをクリアしました');
       
       // 状態を更新
       setCurrentUser(null);

@@ -107,6 +107,12 @@
         "LogGroupName": "/aws/lambda/calorie-calculator-api-dev-getFoodById"
       }
     },
+    "AddFoodLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/calorie-calculator-api-dev-addFood"
+      }
+    },
     "AddMealRecordLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
@@ -243,7 +249,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/auth.signUp",
         "Runtime": "nodejs18.x",
@@ -279,7 +285,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/auth.signIn",
         "Runtime": "nodejs18.x",
@@ -315,7 +321,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/auth.getCurrentUser",
         "Runtime": "nodejs18.x",
@@ -351,7 +357,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/auth.changePassword",
         "Runtime": "nodejs18.x",
@@ -387,7 +393,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/handler.searchFoods",
         "Runtime": "nodejs18.x",
@@ -423,7 +429,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/handler.getFoodById",
         "Runtime": "nodejs18.x",
@@ -452,6 +458,42 @@
         "GetFoodByIdLogGroup"
       ]
     },
+    "AddFoodLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
+        },
+        "Handler": "src/lambda/handler.addFood",
+        "Runtime": "nodejs18.x",
+        "FunctionName": "calorie-calculator-api-dev-addFood",
+        "MemorySize": 256,
+        "Timeout": 10,
+        "Environment": {
+          "Variables": {
+            "FOODS_TABLE": "calorie-calculator-api-dev-Foods",
+            "MEALS_TABLE": "calorie-calculator-api-dev-Meals",
+            "USERS_TABLE": "calorie-calculator-api-dev-Users",
+            "STAGE": "dev",
+            "JWT_SECRET": "your-secret-key-change-this-in-production",
+            "JWT_EXPIRES_IN": "7d",
+            "FROM_EMAIL": "noreply@example.com"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "AddFoodLogGroup"
+      ]
+    },
     "AddMealRecordLambdaFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -459,7 +501,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/handler.addMealRecord",
         "Runtime": "nodejs18.x",
@@ -495,7 +537,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/handler.getDailySummary",
         "Runtime": "nodejs18.x",
@@ -531,7 +573,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/handler.getUserSettings",
         "Runtime": "nodejs18.x",
@@ -567,7 +609,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/calorie-calculator-api/dev/1770644956890-2026-02-09T13:49:16.890Z/calorie-calculator-api.zip"
+          "S3Key": "serverless/calorie-calculator-api/dev/1770645895190-2026-02-09T14:04:55.190Z/calorie-calculator-api.zip"
         },
         "Handler": "src/lambda/handler.updateUserSettings",
         "Runtime": "nodejs18.x",
@@ -596,104 +638,114 @@
         "UpdateUserSettingsLogGroup"
       ]
     },
-    "SignUpLambdaVersionN7Gs9CFFRpL3n5bgzkfFWJINLqgpqfniPzk9eiCVU": {
+    "SignUpLambdaVersionFjCzooyIO6NJbxuB5WjPlSaAF7mtHqmwmcxBCmcI": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "SignUpLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "SignInLambdaVersionBBqrQqqk0MI1HOyThxWwts3pwjithKT7f4KkX3qnXQ": {
+    "SignInLambdaVersionJEqJ4VBBSPFzJGgOUvl5gbFHWmNNaQFJUaOqiS7VZ0": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "SignInLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "GetCurrentUserLambdaVersionxNKSQ0ErnU2vnPdffMBuCIEdoSQmYPYwc0NbBpSoc": {
+    "GetCurrentUserLambdaVersionkmgWFa9UJmmGH9L2cTXAmAc3ADqRHWxRXTUJUOqo8": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "GetCurrentUserLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "ChangePasswordLambdaVersionRHiqyx3XIyG3ENRQ0UUwHQ54wvJ0KbnBgoDI5Hsds": {
+    "ChangePasswordLambdaVersionx17rMCubyJmT5PE8jBPSucEosu5vemFvdI9p2EjfSEY": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ChangePasswordLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "SearchFoodsLambdaVersion3MNzvpUTwqWubBYz16GxW0MMesD0kU3baJcBAIvg": {
+    "SearchFoodsLambdaVersionJNXInBYAdzQWcRCa8gIZC3Hi1Qh3ULY4qV4LqLQ97M": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "SearchFoodsLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "GetFoodByIdLambdaVersionIdQ85N7y6hoWuc8XExjDwNaTsh6SrJ2L8iKJFjbQr4": {
+    "GetFoodByIdLambdaVersionE4J53iXk5gGPu296moHBeg77mGWl7PWAgeIa5xonE8": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "GetFoodByIdLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "AddMealRecordLambdaVersionvBpoKWSfqu87otN8fftDqf1u66sBWY7SIpNRAKNLxw": {
+    "AddFoodLambdaVersionMgJQwPy5fPgZBsUDOxsHWh8u7igvgaqXpNkfSLg4kQ": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "AddFoodLambdaFunction"
+        },
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
+      }
+    },
+    "AddMealRecordLambdaVersionU8xN000PvFW3iaCscAODNRvyMDbM2G1wFCUa76KfPU": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "AddMealRecordLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "GetDailySummaryLambdaVersionHaiC4RBRO7ua8HpZqUCjyyfsx48Vnuhsp0oVb7rqqDI": {
+    "GetDailySummaryLambdaVersionxXylzVIrFJWdh8dxck2GKVJajAZEqzhFrFYnbhRxEI": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "GetDailySummaryLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "GetUserSettingsLambdaVersionBkshua5pARu1bsrbNM5eumVGFGQtButhNaicJZj9gzo": {
+    "GetUserSettingsLambdaVersionfDUzSr1ZYyQFAA4whQbNbWRJXiWMjraRjV3poGY": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "GetUserSettingsLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
-    "UpdateUserSettingsLambdaVersionZjnnY1cl9e91TXhvWz6pg0lsfqJolrO6Y3KsKlrSik": {
+    "UpdateUserSettingsLambdaVersionFGLJ4vCT6DTyseEBwRiR5fnHt7QnddqOahSoP4baw": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "UpdateUserSettingsLambdaFunction"
         },
-        "CodeSha256": "NRd07xILFvbP6/1UYuWLThzLlvEhO7R8JyQy1QHvAuk="
+        "CodeSha256": "bFc/uRK9rZhKAmYYYP76Ex/KocCfcFmmAfhGKB/Sz6U="
       }
     },
     "ApiGatewayRestApi": {
@@ -1170,6 +1222,51 @@
         }
       }
     },
+    "ApiGatewayMethodFoodsOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceFoods"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
     "ApiGatewayMethodMealsOptions": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
@@ -1581,6 +1678,52 @@
         "GetFoodByIdLambdaPermissionApiGateway"
       ]
     },
+    "ApiGatewayMethodFoodsPost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceFoods"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "AddFoodLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "AddFoodLambdaPermissionApiGateway"
+      ]
+    },
     "ApiGatewayMethodMealsPost": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
@@ -1765,7 +1908,7 @@
         "UpdateUserSettingsLambdaPermissionApiGateway"
       ]
     },
-    "ApiGatewayDeployment1770644842591": {
+    "ApiGatewayDeployment1770645726767": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -1780,6 +1923,7 @@
         "ApiGatewayMethodAuthChangeDashpasswordOptions",
         "ApiGatewayMethodFoodsSearchOptions",
         "ApiGatewayMethodFoodsIdVarOptions",
+        "ApiGatewayMethodFoodsOptions",
         "ApiGatewayMethodMealsOptions",
         "ApiGatewayMethodMealsUseridVarDailyDateVarOptions",
         "ApiGatewayMethodUsersUseridVarSettingsOptions",
@@ -1789,6 +1933,7 @@
         "ApiGatewayMethodAuthChangeDashpasswordPost",
         "ApiGatewayMethodFoodsSearchGet",
         "ApiGatewayMethodFoodsIdVarGet",
+        "ApiGatewayMethodFoodsPost",
         "ApiGatewayMethodMealsPost",
         "ApiGatewayMethodMealsUseridVarDailyDateVarGet",
         "ApiGatewayMethodUsersUseridVarSettingsGet",
@@ -1986,6 +2131,43 @@
         "FunctionName": {
           "Fn::GetAtt": [
             "GetFoodByIdLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "AddFoodLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "AddFoodLambdaFunction",
             "Arn"
           ]
         },
@@ -2279,7 +2461,7 @@
     "SignUpLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "SignUpLambdaVersionN7Gs9CFFRpL3n5bgzkfFWJINLqgpqfniPzk9eiCVU"
+        "Ref": "SignUpLambdaVersionFjCzooyIO6NJbxuB5WjPlSaAF7mtHqmwmcxBCmcI"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-SignUpLambdaFunctionQualifiedArn"
@@ -2288,7 +2470,7 @@
     "SignInLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "SignInLambdaVersionBBqrQqqk0MI1HOyThxWwts3pwjithKT7f4KkX3qnXQ"
+        "Ref": "SignInLambdaVersionJEqJ4VBBSPFzJGgOUvl5gbFHWmNNaQFJUaOqiS7VZ0"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-SignInLambdaFunctionQualifiedArn"
@@ -2297,7 +2479,7 @@
     "GetCurrentUserLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "GetCurrentUserLambdaVersionxNKSQ0ErnU2vnPdffMBuCIEdoSQmYPYwc0NbBpSoc"
+        "Ref": "GetCurrentUserLambdaVersionkmgWFa9UJmmGH9L2cTXAmAc3ADqRHWxRXTUJUOqo8"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-GetCurrentUserLambdaFunctionQualifiedArn"
@@ -2306,7 +2488,7 @@
     "ChangePasswordLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ChangePasswordLambdaVersionRHiqyx3XIyG3ENRQ0UUwHQ54wvJ0KbnBgoDI5Hsds"
+        "Ref": "ChangePasswordLambdaVersionx17rMCubyJmT5PE8jBPSucEosu5vemFvdI9p2EjfSEY"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-ChangePasswordLambdaFunctionQualifiedArn"
@@ -2315,7 +2497,7 @@
     "SearchFoodsLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "SearchFoodsLambdaVersion3MNzvpUTwqWubBYz16GxW0MMesD0kU3baJcBAIvg"
+        "Ref": "SearchFoodsLambdaVersionJNXInBYAdzQWcRCa8gIZC3Hi1Qh3ULY4qV4LqLQ97M"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-SearchFoodsLambdaFunctionQualifiedArn"
@@ -2324,16 +2506,25 @@
     "GetFoodByIdLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "GetFoodByIdLambdaVersionIdQ85N7y6hoWuc8XExjDwNaTsh6SrJ2L8iKJFjbQr4"
+        "Ref": "GetFoodByIdLambdaVersionE4J53iXk5gGPu296moHBeg77mGWl7PWAgeIa5xonE8"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-GetFoodByIdLambdaFunctionQualifiedArn"
       }
     },
+    "AddFoodLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "AddFoodLambdaVersionMgJQwPy5fPgZBsUDOxsHWh8u7igvgaqXpNkfSLg4kQ"
+      },
+      "Export": {
+        "Name": "sls-calorie-calculator-api-dev-AddFoodLambdaFunctionQualifiedArn"
+      }
+    },
     "AddMealRecordLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "AddMealRecordLambdaVersionvBpoKWSfqu87otN8fftDqf1u66sBWY7SIpNRAKNLxw"
+        "Ref": "AddMealRecordLambdaVersionU8xN000PvFW3iaCscAODNRvyMDbM2G1wFCUa76KfPU"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-AddMealRecordLambdaFunctionQualifiedArn"
@@ -2342,7 +2533,7 @@
     "GetDailySummaryLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "GetDailySummaryLambdaVersionHaiC4RBRO7ua8HpZqUCjyyfsx48Vnuhsp0oVb7rqqDI"
+        "Ref": "GetDailySummaryLambdaVersionxXylzVIrFJWdh8dxck2GKVJajAZEqzhFrFYnbhRxEI"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-GetDailySummaryLambdaFunctionQualifiedArn"
@@ -2351,7 +2542,7 @@
     "GetUserSettingsLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "GetUserSettingsLambdaVersionBkshua5pARu1bsrbNM5eumVGFGQtButhNaicJZj9gzo"
+        "Ref": "GetUserSettingsLambdaVersionfDUzSr1ZYyQFAA4whQbNbWRJXiWMjraRjV3poGY"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-GetUserSettingsLambdaFunctionQualifiedArn"
@@ -2360,7 +2551,7 @@
     "UpdateUserSettingsLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "UpdateUserSettingsLambdaVersionZjnnY1cl9e91TXhvWz6pg0lsfqJolrO6Y3KsKlrSik"
+        "Ref": "UpdateUserSettingsLambdaVersionFGLJ4vCT6DTyseEBwRiR5fnHt7QnddqOahSoP4baw"
       },
       "Export": {
         "Name": "sls-calorie-calculator-api-dev-UpdateUserSettingsLambdaFunctionQualifiedArn"

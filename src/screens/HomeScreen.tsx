@@ -52,7 +52,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
   // 画面がフォーカスされた時、またはパラメータが変更された時にデータを再読み込み
   useFocusEffect(
     React.useCallback(() => {
-      console.log('🏠 ホーム画面がフォーカスされました');
       loadDailySummary();
     }, [route?.params?.refresh])
   );
@@ -71,14 +70,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
 
   const loadDailySummary = async () => {
     try {
-      console.log('📊 日別サマリーを読み込み中...');
       setLoading(true);
       setError(null);
       const summary = await databaseService.getDailySummary(today);
       setDailySummary(summary);
-      console.log(`✅ ${summary.meals.length}件の食事記録を読み込みました`);
     } catch (error) {
-      console.error('❌ 日別サマリーの読み込みに失敗:', error);
+      console.error('日別サマリーの読み込みに失敗:', error);
       setError('データの読み込みに失敗しました');
     } finally {
       setLoading(false);

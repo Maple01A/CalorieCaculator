@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
+import { authService } from '../services/auth';
+import { apiClient } from '../services/apiClient';
 import { Card } from './Card';
 import { Input } from './Input';
 import { Button } from './Button';
@@ -120,6 +122,8 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
 
     try {
       setSaving(true);
+      const currentUser = authService.getCurrentUser();
+      const isGuest = authService.isGuestMode();
 
       const newFood: Omit<Food, 'id'> = {
         name: name.trim(),
@@ -130,12 +134,23 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
         category: category,
       };
 
+      // ローカルに保存
       const foodId = await databaseService.addCustomFood(newFood);
 
       const savedFood: Food = {
         id: foodId,
         ...newFood,
       };
+
+      // ログイン中の場合はクラウドにも保存
+      if (currentUser && !isGuest) {
+        try {
+          await apiClient.addFood(savedFood);
+        } catch (cloudError) {
+          console.warn('クラウド同期に失敗:', cloudError);
+          // クラウド同期失敗でもローカルには保存済みなので続行
+        }
+      }
 
       // 登録後、すぐにモーダルを閉じる
       onSuccess(savedFood);
@@ -146,6 +161,11 @@ export const AddFoodModal: React.FC<AddFoodModalProps> = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCategorySelect = (selectedCategory: string) => {
+    setCategory(selectedCategory);
+    setShowCategoryPicker(false);
   };
 
   return (

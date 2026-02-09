@@ -169,7 +169,6 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
         // ログイン中の場合はクラウドにも保存
         if (currentUser && !isGuest) {
           try {
-            console.log('🔄 クラウドに同期中:', mealRecord.foodName);
             await apiClient.addMeal({
               userId: currentUser.id,
               foodId: mealRecord.foodId,
@@ -182,7 +181,6 @@ export const AddMealScreen: React.FC<AddMealScreenProps> = ({ navigation, route 
               mealType: mealRecord.mealType,
               timestamp: timestamp.toISOString(),
             });
-            console.log('✅ クラウドに保存しました:', mealRecord.foodName);
           } catch (cloudError) {
             console.warn('クラウド同期に失敗:', cloudError);
             // クラウド同期失敗でもローカルには保存済みなので続行
