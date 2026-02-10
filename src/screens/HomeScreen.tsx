@@ -19,6 +19,7 @@ import { RefreshControl, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { databaseService } from '../services/database';
 import { authService } from '../services/auth';
+import { apiClient } from '../services/apiClient';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { AnimatedBackground } from '../components/AnimatedBackground';
@@ -84,6 +85,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    
+    // ログインユーザーの場合、クラウドから設定を同期
+    const user = authService.getCurrentUser();
+    if (user && !authService.isGuestMode()) {
+      try {
+        const settings = await apiClient.getSettings(user.id);
+        if (settings) {
+          await databaseService.updateUserSettings({
+            dailyCalorieGoal: settings.dailyCalorieGoal || settings.target_calories || 2000,
+            height: settings.height,
+            weight: settings.weight,
+            age: settings.age,
+            gender: settings.gender,
+            activityLevel: settings.activityLevel || settings.activity_level,
+          });
+        }
+      } catch (error) {
+        console.warn('クラウド設定の取得に失敗:', error);
+      }
+    }
+    
     await loadDailySummary();
     setRefreshing(false);
   };

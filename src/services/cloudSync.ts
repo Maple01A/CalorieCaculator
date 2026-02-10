@@ -65,7 +65,6 @@ class CloudSyncService {
     try {
       // ローカルデータをクリア
       await databaseService.clearAllMealRecords();
-      await databaseService.resetUserSettings();
       
       // 設定を復元
       try {
@@ -73,15 +72,20 @@ class CloudSyncService {
         if (settings) {
           await databaseService.updateUserSettings({
             dailyCalorieGoal: settings.dailyCalorieGoal || settings.target_calories || 2000,
-            height: settings.height,
-            weight: settings.weight,
-            age: settings.age,
-            gender: settings.gender,
-            activityLevel: settings.activityLevel || settings.activity_level,
+            height: settings.height || 170,
+            weight: settings.weight || 70,
+            age: settings.age || 30,
+            gender: settings.gender || 'male',
+            activityLevel: settings.activityLevel || settings.activity_level || 'moderate',
           });
+        } else {
+          // 設定がクラウドにない場合はデフォルト値を設定
+          await databaseService.resetUserSettings();
         }
       } catch (error) {
         console.warn('設定の復元に失敗:', error);
+        // 設定復元失敗時はデフォルト値を使用
+        await databaseService.resetUserSettings();
       }
       
       // 食事記録を復元（過去30日分）

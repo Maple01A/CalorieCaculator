@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { databaseService } from '../services/database';
 import { authService } from '../services/auth';
+import { apiClient } from '../services/apiClient';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -72,7 +73,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const handleSave = async () => {
     try {
       setSaving(true);
+      
+      // ローカルに保存
       await databaseService.updateUserSettings(settings);
+      
+      // ログインユーザーの場合、クラウドにも保存
+      if (currentUser && !isGuest) {
+        try {
+          await apiClient.updateSettings(currentUser.id, {
+            targetCalories: settings.dailyCalorieGoal,
+            height: settings.height,
+            weight: settings.weight,
+            age: settings.age,
+            gender: settings.gender,
+            activityLevel: settings.activityLevel,
+          });
+        } catch (cloudError) {
+          console.warn('クラウド同期に失敗:', cloudError);
+          // クラウド同期失敗でもローカルには保存済みなので続行
+        }
+      }
+      
       Alert.alert(
         '成功',
         '設定を保存しました',
