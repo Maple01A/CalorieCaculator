@@ -63,13 +63,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       // ログイン
       await authService.signInWithEmail(email.trim(), password);
       
-      // クラウドからデータを復元
-      await cloudSyncService.syncFromCloud();
+      // クラウドからデータを復元（設定含む）
+      try {
+        await cloudSyncService.syncFromCloud();
+      } catch (syncError) {
+        console.warn('データ同期エラー:', syncError);
+        Alert.alert(
+          '警告',
+          'データの同期に失敗しました。ローカルデータを使用します。',
+          [{ text: 'OK' }]
+        );
+      }
       
-      // 画面遷移前に少し待つ
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // ログイン成功後、ホーム画面に自動遷移
+      // ホーム画面に遷移（リフレッシュフラグ付き）
       navigation.navigate('Main', { 
         screen: 'Home',
         params: { refresh: Date.now() }

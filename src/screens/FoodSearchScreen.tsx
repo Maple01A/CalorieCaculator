@@ -210,15 +210,6 @@ export const FoodSearchScreen: React.FC<FoodSearchScreenProps> = ({ navigation, 
                 leftIcon={<Ionicons name="add-circle" size={20} color={Colors.surface} />}
               />
             )}
-            {!isDesktop && (
-              <TouchableOpacity
-                style={styles.addButtonIcon}
-                onPress={() => setShowAddModal(true)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={24} color={Colors.surface} />
-              </TouchableOpacity>
-            )}
           </View>
 
           {/* 検索バー */}
