@@ -35,8 +35,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     dailyCalorieGoal: 2000,
     weight: 70,
     height: 170,
-    age: 30,
-    activityLevel: 'moderate',
+    age: 20,
     gender: 'male',
   });
   const [loading, setLoading] = useState(true);
@@ -86,7 +85,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             weight: settings.weight,
             age: settings.age,
             gender: settings.gender,
-            activityLevel: settings.activityLevel,
           });
         } catch (cloudError) {
           console.warn('クラウド同期に失敗:', cloudError);

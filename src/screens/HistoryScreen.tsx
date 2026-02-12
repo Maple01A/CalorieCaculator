@@ -30,42 +30,100 @@ interface HistoryScreenProps {
   navigation: any;
 }
 
+type PeriodType = 'week' | 'month' | 'year';
+
+const periodConfig = {
+  week: { days: 7, label: '1週間', shortLabel: '週' },
+  month: { days: 30, label: '1か月', shortLabel: '月' },
+  year: { days: 365, label: '1年', shortLabel: '年' },
+};
+
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('week');
+  const [showAllDays, setShowAllDays] = useState(false);
   const { isMobile, isDesktop } = useResponsive();
+
+  const INITIAL_DISPLAY_COUNT = 5; // 最初に表示する件数
 
   useEffect(() => {
     loadHistory();
-  }, []);
+    setShowAllDays(false); // 期間変更時にリセット
+  }, [selectedPeriod]);
 
   const loadHistory = async () => {
     try {
       setLoading(true);
       const summaries: DailySummary[] = [];
       const today = new Date();
+      const { days } = periodConfig[selectedPeriod];
       
-      // 過去7日分のデータを取得（新しい順）
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateString = date.toISOString().split('T')[0];
-        
-        try {
-          const summary = await databaseService.getDailySummary(dateString);
-          summaries.push(summary);
-        } catch (error) {
+      // 選択された期間分のデータを取得（新しい順）
+      // 年間データの場合は週単位で集計
+      if (selectedPeriod === 'year') {
+        // 52週分のデータを週ごとに集計
+        for (let week = 51; week >= 0; week--) {
+          const weekStart = new Date(today);
+          weekStart.setDate(weekStart.getDate() - (week * 7) - 6);
+          const weekEnd = new Date(today);
+          weekEnd.setDate(weekEnd.getDate() - (week * 7));
+          
+          let weekTotalCalories = 0;
+          let weekTotalProtein = 0;
+          let weekTotalCarbs = 0;
+          let weekTotalFat = 0;
+          let weekMeals: MealRecord[] = [];
+          let goalCalories = 2000;
+          
+          for (let d = 0; d < 7; d++) {
+            const date = new Date(weekStart);
+            date.setDate(date.getDate() + d);
+            const dateString = date.toISOString().split('T')[0];
+            
+            try {
+              const summary = await databaseService.getDailySummary(dateString);
+              weekMeals = [...weekMeals, ...summary.meals];
+              goalCalories = summary.goalCalories;
+            } catch (error) {
+              // データなし
+            }
+          }
+          
+          const weekDateString = weekEnd.toISOString().split('T')[0];
           summaries.push({
-            date: dateString,
-            totalCalories: 0,
-            totalProtein: 0,
-            totalCarbs: 0,
-            totalFat: 0,
-            meals: [],
-            goalCalories: 2000,
+            date: weekDateString,
+            totalCalories: weekTotalCalories,
+            totalProtein: weekTotalProtein,
+            totalCarbs: weekTotalCarbs,
+            totalFat: weekTotalFat,
+            meals: weekMeals,
+            goalCalories: goalCalories * 7, // 週間の目標
           });
+        }
+      } else {
+        // 週・月は日単位
+        for (let i = days - 1; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateString = date.toISOString().split('T')[0];
+          
+          try {
+            const summary = await databaseService.getDailySummary(dateString);
+            summaries.push(summary);
+          } catch (error) {
+            summaries.push({
+              date: dateString,
+              totalCalories: 0,
+              totalProtein: 0,
+              totalCarbs: 0,
+              totalFat: 0,
+              meals: [],
+              goalCalories: 2000,
+            });
+          }
         }
       }
       
@@ -99,6 +157,17 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     const today = new Date();
     const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
+    if (selectedPeriod === 'year') {
+      // 年間表示：月を表示
+      return `${date.getMonth() + 1}月`;
+    }
+    
+    if (selectedPeriod === 'month') {
+      // 月間表示：日付を簡潔に
+      return `${date.getDate()}`;
+    }
+    
+    // 週間表示
     if (diffDays === 0) return '今日';
     if (diffDays === 1) return '昨日';
     
@@ -148,12 +217,23 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
   // カロリーグラフのデータ
   const getCalorieChartData = () => {
-    const labels = dailySummaries.map(s => formatDateShort(s.date));
-    const data = dailySummaries.map(s => {
+    let filteredSummaries = dailySummaries;
+    
+    // 月間表示の場合、5日ごとにサンプリング
+    if (selectedPeriod === 'month') {
+      filteredSummaries = dailySummaries.filter((_, index) => index % 5 === 0 || index === dailySummaries.length - 1);
+    }
+    // 年間表示の場合、月ごと（4週ごと）にサンプリング
+    else if (selectedPeriod === 'year') {
+      filteredSummaries = dailySummaries.filter((_, index) => index % 4 === 0 || index === dailySummaries.length - 1);
+    }
+    
+    const labels = filteredSummaries.map(s => formatDateShort(s.date));
+    const data = filteredSummaries.map(s => {
       const total = calculateTotalNutrition(s.meals);
       return total.calories;
     });
-    const goalData = dailySummaries.map(s => s.goalCalories);
+    const goalData = filteredSummaries.map(s => s.goalCalories);
 
     return {
       labels,
@@ -206,8 +286,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     };
   };
 
-  // 週間統計データ
-  const getWeeklyStats = () => {
+  // 統計データ（期間対応）
+  const getPeriodStats = () => {
     const totalCalories = dailySummaries.reduce((sum, s) => {
       const nutrition = calculateTotalNutrition(s.meals);
       return sum + nutrition.calories;
@@ -287,7 +367,23 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     );
   }
 
-  const weeklyStats = getWeeklyStats();
+  const periodStats = getPeriodStats();
+
+  const getPeriodLabel = () => {
+    switch (selectedPeriod) {
+      case 'week': return '今週';
+      case 'month': return '今月';
+      case 'year': return '今年';
+    }
+  };
+
+  const getPeriodSubtitle = () => {
+    switch (selectedPeriod) {
+      case 'week': return '過去7日間';
+      case 'month': return '過去30日間';
+      case 'year': return '過去1年間';
+    }
+  };
 
   return (
     <AnimatedBackground variant="neutral">
@@ -307,43 +403,66 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             {/* ヘッダー */}
             <View style={styles.header}>
               <Text style={[styles.title, isDesktop && TextStyles.h1]}>履歴</Text>
-              <Text style={[styles.subtitle, isDesktop && { fontSize: 16 }]}>過去7日間の食事記録を確認しましょう</Text>
+              <Text style={[styles.subtitle, isDesktop && { fontSize: 16 }]}>{getPeriodSubtitle()}の食事記録を確認しましょう</Text>
             </View>
 
-            {/* 週間統計カード */}
+            {/* 期間セレクター */}
+            <View style={styles.periodSelector}>
+              {(['week', 'month', 'year'] as PeriodType[]).map((period) => (
+                <TouchableOpacity
+                  key={period}
+                  style={[
+                    styles.periodButton,
+                    selectedPeriod === period && styles.periodButtonActive,
+                  ]}
+                  onPress={() => setSelectedPeriod(period)}
+                >
+                  <Text
+                    style={[
+                      styles.periodButtonText,
+                      selectedPeriod === period && styles.periodButtonTextActive,
+                    ]}
+                  >
+                    {periodConfig[period].label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* 統計カード */}
             <GlassCard style={styles.statsCard}>
-          <Text style={styles.sectionTitle}>今週の統計</Text>
+          <Text style={styles.sectionTitle}>{getPeriodLabel()}の統計</Text>
 
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: Colors.primary }]}>
-                {weeklyStats.totalProtein}g
+                {periodStats.totalProtein}g
               </Text>
               <Text style={styles.statLabel}>タンパク質</Text>
             </View>
             
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: Colors.secondary }]}>
-                {weeklyStats.totalCarbs}g
+                {periodStats.totalCarbs}g
               </Text>
               <Text style={styles.statLabel}>炭水化物</Text>
             </View>
             
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: Colors.accent }]}>
-                {weeklyStats.totalFat}g
+                {periodStats.totalFat}g
               </Text>
               <Text style={styles.statLabel}>脂質</Text>
             </View>
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{weeklyStats.avgCalories}</Text>
+              <Text style={styles.statValue}>{periodStats.avgCalories}</Text>
               <Text style={styles.statLabel}>平均カロリー</Text>
             </View>
             
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{weeklyStats.daysWithRecords}</Text>
+              <Text style={styles.statValue}>{periodStats.daysWithRecords}</Text>
               <Text style={styles.statLabel}>記録日数</Text>
             </View>
           </View>
@@ -351,8 +470,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
             {/* カロリー推移グラフ */}
             <GlassCard style={styles.chartCard}>
-          <Text style={styles.sectionTitle}>今週のカロリー推移</Text>
-          <Text style={styles.chartSubtitle}>過去7日間の摂取カロリーと目標</Text>
+          <Text style={styles.sectionTitle}>{getPeriodLabel()}のカロリー推移</Text>
+          <Text style={styles.chartSubtitle}>{getPeriodSubtitle()}の摂取カロリーと目標</Text>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
@@ -391,7 +510,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
             {/* 栄養素バランスグラフ */}
             <GlassCard style={styles.chartCard}>
-              <Text style={styles.sectionTitle}>今週の栄養バランス</Text>
+              <Text style={styles.sectionTitle}>{getPeriodLabel()}の栄養バランス</Text>
               <Text style={styles.chartSubtitle}>三大栄養素の合計摂取量（グラム）</Text>
               
               <BarChart
@@ -429,7 +548,16 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             <GlassCard style={styles.listCard}>
               <Text style={styles.sectionTitle}>日別詳細</Text>
               
-              {dailySummaries.slice().reverse().map((summary, index) => {
+              {(() => {
+                const reversedSummaries = dailySummaries.slice().reverse();
+                const displaySummaries = showAllDays 
+                  ? reversedSummaries 
+                  : reversedSummaries.slice(0, INITIAL_DISPLAY_COUNT);
+                const remainingCount = reversedSummaries.length - INITIAL_DISPLAY_COUNT;
+                
+                return (
+                  <>
+                    {displaySummaries.map((summary, index) => {
                 const nutrition = calculateTotalNutrition(summary.meals);
                 const percentage = Math.round((nutrition.calories / summary.goalCalories) * 100);
                 const isExpanded = expandedDates.has(summary.date);
@@ -530,10 +658,41 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   </View>
                 )}
                 
-                {index < dailySummaries.length - 1 && <View style={styles.divider} />}
+                {index < displaySummaries.length - 1 && <View style={styles.divider} />}
               </View>
             );
           })}
+                    
+                    {/* 全て表示ボタン */}
+                    {!showAllDays && remainingCount > 0 && (
+                      <TouchableOpacity
+                        style={styles.showAllButton}
+                        onPress={() => setShowAllDays(true)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.showAllButtonText}>
+                          あと{remainingCount}件を表示
+                        </Text>
+                        <Ionicons name="chevron-down" size={18} color={Colors.primary} />
+                      </TouchableOpacity>
+                    )}
+                    
+                    {/* 折りたたむボタン */}
+                    {showAllDays && remainingCount > 0 && (
+                      <TouchableOpacity
+                        style={styles.showAllButton}
+                        onPress={() => setShowAllDays(false)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.showAllButtonText}>
+                          折りたたむ
+                        </Text>
+                        <Ionicons name="chevron-up" size={18} color={Colors.primary} />
+                      </TouchableOpacity>
+                    )}
+                  </>
+                );
+              })()}
             </GlassCard>
           </ResponsiveContainer>
         </ScrollView>
@@ -577,6 +736,36 @@ const styles = StyleSheet.create({
   subtitle: {
     ...TextStyles.body,
     color: Colors.textSecondary,
+  },
+  
+  periodSelector: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xs,
+    marginBottom: Spacing.base,
+  },
+  
+  periodButton: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    borderRadius: BorderRadius.base,
+    alignItems: 'center',
+  },
+  
+  periodButtonActive: {
+    backgroundColor: Colors.primary,
+  },
+  
+  periodButtonText: {
+    ...TextStyles.body,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  
+  periodButtonTextActive: {
+    color: Colors.surface,
   },
   
   statsCard: {
@@ -782,5 +971,22 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.borderLight,
     marginTop: Spacing.base,
+  },
+  
+  showAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.base,
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.lg,
+  },
+  
+  showAllButtonText: {
+    ...TextStyles.body,
+    color: Colors.primary,
+    fontWeight: '600',
   },
 });

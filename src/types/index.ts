@@ -41,7 +41,6 @@ export interface UserSettings {
   weight: number;
   height: number;
   age: number;
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   gender: 'male' | 'female';
   isGuest?: boolean; // ゲストモードフラグ
 }

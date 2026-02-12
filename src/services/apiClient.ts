@@ -229,9 +229,9 @@ class ApiClient {
   }
 
   async deleteMeal(mealId: string) {
-    // TODO: バックエンドに削除APIを追加する必要がある
-    console.warn('削除APIは未実装です');
-    return Promise.resolve();
+    return this.request<{ message: string }>(`/meals/${mealId}`, {
+      method: 'DELETE',
+    });
   }
 
   // Health check

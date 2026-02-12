@@ -24,7 +24,6 @@ class CloudSyncService {
         weight: settings.weight,
         age: settings.age,
         gender: settings.gender,
-        activityLevel: settings.activityLevel,
       });
 
       // 食事記録を同期（過去30日分）
@@ -76,7 +75,6 @@ class CloudSyncService {
             weight: settings.weight || 70,
             age: settings.age || 30,
             gender: settings.gender || 'male',
-            activityLevel: settings.activityLevel || settings.activity_level || 'moderate',
           });
         } else {
           // 設定がクラウドにない場合はデフォルト値を設定

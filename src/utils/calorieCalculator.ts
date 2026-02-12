@@ -36,19 +36,14 @@ export function calculateBMR(settings: UserSettings): number {
 }
 
 /**
- * 活動レベルに基づく総消費カロリーを計算する
+ * 総消費カロリーを計算する（普通活動レベルで固定）
  */
 export function calculateTDEE(settings: UserSettings): number {
   const bmr = calculateBMR(settings);
-  const activityMultipliers = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    very_active: 1.9,
-  };
+  // 普通活動レベル（moderate）の係数を使用
+  const activityMultiplier = 1.55;
   
-  return Math.round(bmr * activityMultipliers[settings.activityLevel]);
+  return Math.round(bmr * activityMultiplier);
 }
 
 /**
