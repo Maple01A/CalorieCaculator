@@ -322,27 +322,9 @@ export const updateUserSettings = async (event: APIGatewayProxyEvent): Promise<A
     }));
 
     if (!existingUser.Item) {
-      // ユーザーが存在しない場合は設定のみで新規作成
-      const newSettings: Record<string, any> = {
-        id: userId,
-        dailyCalorieGoal: body.dailyCalorieGoal || body.targetCalories || 2000,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      // オプションフィールドを追加
-      if (body.weight !== undefined) newSettings.weight = body.weight;
-      if (body.height !== undefined) newSettings.height = body.height;
-      if (body.age !== undefined) newSettings.age = body.age;
-      if (body.gender !== undefined) newSettings.gender = body.gender;
-      if (body.activityLevel !== undefined) newSettings.activityLevel = body.activityLevel;
-
-      await docClient.send(new PutCommand({
-        TableName: USERS_TABLE,
-        Item: newSettings,
-      }));
-
-      return response(200, { message: 'ユーザー設定を作成しました', settings: newSettings });
+      // 認証されたユーザーのみ設定を保存できるようにする
+      // ユーザーが存在しない場合はエラーを返す（セキュリティ上の理由）
+      return response(404, { error: 'ユーザーが見つかりません。再度ログインしてください。' });
     }
 
     // UpdateCommand を使用して既存データを保持しながら更新

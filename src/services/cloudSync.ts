@@ -18,7 +18,7 @@ class CloudSyncService {
       const dailySummary = await databaseService.getDailySummary(today);
 
       // 設定を同期
-      await apiClient.updateSettings({
+      await apiClient.updateSettings(user.id, {
         targetCalories: settings.dailyCalorieGoal,
         height: settings.height,
         weight: settings.weight,

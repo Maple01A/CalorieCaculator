@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
@@ -177,7 +177,7 @@ export const signUp = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
     // パスワードハッシュ化
     const passwordHash = await hashPassword(password);
 
-    // ユーザー作成
+    // ユーザー作成（デフォルト設定を含む）
     const user = {
       id: userId,
       email,
@@ -185,7 +185,13 @@ export const signUp = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       passwordHash,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      dailyCalorieGoal: 2000, // デフォルト値
+      // デフォルト設定
+      dailyCalorieGoal: 2000,
+      height: 170,
+      weight: 70,
+      age: 20,
+      gender: 'male',
+      activityLevel: 'moderate',
     };
 
     await docClient.send(new PutCommand({
@@ -238,13 +244,14 @@ export const signIn = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       return response(401, { error: 'メールアドレスまたはパスワードが正しくありません' });
     }
 
-    // 最終ログイン日時更新
-    await docClient.send(new PutCommand({
+    // 最終ログイン日時更新（UpdateCommandで既存データを保持）
+    await docClient.send(new UpdateCommand({
       TableName: USERS_TABLE,
-      Item: {
-        ...user,
-        lastLoginAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      Key: { id: user.id },
+      UpdateExpression: 'SET lastLoginAt = :lastLoginAt, updatedAt = :updatedAt',
+      ExpressionAttributeValues: {
+        ':lastLoginAt': new Date().toISOString(),
+        ':updatedAt': new Date().toISOString(),
       },
     }));
 
