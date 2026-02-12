@@ -98,7 +98,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
             weight: settings.weight,
             age: settings.age,
             gender: settings.gender,
-            activityLevel: settings.activityLevel || settings.activity_level,
           });
         }
       } catch (error) {
@@ -139,7 +138,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => 
       toast.show({
         description: '削除に失敗しました',
         duration: 2000,
-        status: 'error',
       });
     }
   };

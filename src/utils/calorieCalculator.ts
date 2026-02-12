@@ -36,19 +36,14 @@ export function calculateBMR(settings: UserSettings): number {
 }
 
 /**
- * 活動レベルに基づく総消費カロリーを計算する
+ * 総消費カロリーを計算する（普通活動レベルで固定）
  */
 export function calculateTDEE(settings: UserSettings): number {
   const bmr = calculateBMR(settings);
-  const activityMultipliers = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    very_active: 1.9,
-  };
+  // 普通活動レベル（moderate）の係数を使用
+  const activityMultiplier = 1.55;
   
-  return Math.round(bmr * activityMultipliers[settings.activityLevel]);
+  return Math.round(bmr * activityMultiplier);
 }
 
 /**
@@ -159,85 +154,4 @@ export function calculateMacroBalance(nutrition: {
   };
 }
 
-/**
- * 推奨マクロ栄養素の配分を計算する
- */
-export function getRecommendedMacroDistribution(): {
-  proteinPercentage: number;
-  carbsPercentage: number;
-  fatPercentage: number;
-} {
-  // 一般的な推奨配分
-  return {
-    proteinPercentage: 20, // 20%
-    carbsPercentage: 50,   // 50%
-    fatPercentage: 30,     // 30%
-  };
-}
 
-/**
- * マクロ栄養素のバランスが適切かどうかを判定する
- */
-export function isMacroBalanceHealthy(balance: {
-  proteinPercentage: number;
-  carbsPercentage: number;
-  fatPercentage: number;
-}): {
-  isHealthy: boolean;
-  issues: string[];
-} {
-  const issues: string[] = [];
-  const recommended = getRecommendedMacroDistribution();
-  
-  // タンパク質のチェック（15-25%が理想）
-  if (balance.proteinPercentage < 15) {
-    issues.push('タンパク質が不足しています');
-  } else if (balance.proteinPercentage > 35) {
-    issues.push('タンパク質が過多です');
-  }
-  
-  // 炭水化物のチェック（45-65%が理想）
-  if (balance.carbsPercentage < 45) {
-    issues.push('炭水化物が不足しています');
-  } else if (balance.carbsPercentage > 70) {
-    issues.push('炭水化物が過多です');
-  }
-  
-  // 脂質のチェック（20-35%が理想）
-  if (balance.fatPercentage < 20) {
-    issues.push('脂質が不足しています');
-  } else if (balance.fatPercentage > 40) {
-    issues.push('脂質が過多です');
-  }
-  
-  return {
-    isHealthy: issues.length === 0,
-    issues,
-  };
-}
-
-/**
- * 体重1kgあたりのタンパク質摂取量を計算する
- */
-export function calculateProteinPerKg(
-  totalProtein: number,
-  weight: number
-): number {
-  if (weight <= 0) return 0;
-  return Math.round((totalProtein / weight) * 10) / 10;
-}
-
-/**
- * 推奨タンパク質摂取量を計算する（体重1kgあたり）
- */
-export function getRecommendedProteinPerKg(activityLevel: UserSettings['activityLevel']): number {
-  const recommendations = {
-    sedentary: 0.8,
-    light: 1.0,
-    moderate: 1.2,
-    active: 1.4,
-    very_active: 1.6,
-  };
-  
-  return recommendations[activityLevel];
-}

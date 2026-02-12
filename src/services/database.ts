@@ -142,9 +142,9 @@ class DatabaseService {
     // デフォルトユーザー設定の挿入
     const now = new Date().toISOString();
     await this.db.runAsync(
-      `INSERT INTO user_settings (daily_calorie_goal, weight, height, age, activity_level, gender, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [2000, 70, 170, 30, 'moderate', 'male', now, now]
+      `INSERT INTO user_settings (daily_calorie_goal, weight, height, age, gender, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [2000, 70, 170, 20, 'male', now, now]
     );
   }
 
@@ -286,7 +286,6 @@ class DatabaseService {
       weight: (settings as any).weight,
       height: (settings as any).height,
       age: (settings as any).age,
-      activityLevel: (settings as any).activity_level,
       gender: (settings as any).gender,
     };
   }
@@ -315,10 +314,6 @@ class DatabaseService {
       updateFields.push('age = ?');
       values.push(settings.age);
     }
-    if (settings.activityLevel !== undefined) {
-      updateFields.push('activity_level = ?');
-      values.push(settings.activityLevel);
-    }
     if (settings.gender !== undefined) {
       updateFields.push('gender = ?');
       values.push(settings.gender);
@@ -335,13 +330,6 @@ class DatabaseService {
       )`,
       values
     );
-  }
-
-  // 食事記録の削除
-  async deleteMealRecord(id: string): Promise<void> {
-    if (!this.db) throw new Error('データベースが初期化されていません');
-
-    await this.db.runAsync('DELETE FROM meal_records WHERE id = ?', [id]);
   }
 
   // 食品の追加（カスタム食品）
@@ -473,9 +461,9 @@ class DatabaseService {
       const now = new Date().toISOString();
       await this.db.runAsync('DELETE FROM user_settings');
       await this.db.runAsync(
-        `INSERT INTO user_settings (daily_calorie_goal, weight, height, age, activity_level, gender, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [2000, 70, 170, 30, 'moderate', 'male', now, now]
+        `INSERT INTO user_settings (daily_calorie_goal, weight, height, age, gender, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [2000, 70, 170, 20, 'male', now, now]
       );
     } catch (error) {
       console.error('ユーザー設定のリセットエラー:', error);

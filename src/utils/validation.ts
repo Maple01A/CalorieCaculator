@@ -1,5 +1,3 @@
-import { UserSettings } from '../types';
-
 // バリデーションエラーの型定義
 export interface ValidationError {
   field: string;
@@ -15,7 +13,7 @@ export interface ValidationResult {
 /**
  * 数値の範囲チェック
  */
-export function validateRange(
+function validateRange(
   value: number,
   min: number,
   max: number,
@@ -33,7 +31,7 @@ export function validateRange(
 /**
  * 必須フィールドのチェック
  */
-export function validateRequired(
+function validateRequired(
   value: any,
   fieldName: string
 ): ValidationError | null {
@@ -49,7 +47,7 @@ export function validateRequired(
 /**
  * 文字列の長さチェック
  */
-export function validateLength(
+function validateLength(
   value: string,
   minLength: number,
   maxLength: number,
@@ -62,64 +60,6 @@ export function validateLength(
     };
   }
   return null;
-}
-
-/**
- * ユーザー設定のバリデーション
- */
-export function validateUserSettings(settings: Partial<UserSettings>): ValidationResult {
-  const errors: ValidationError[] = [];
-
-  // 体重のバリデーション
-  if (settings.weight !== undefined) {
-    const weightError = validateRange(settings.weight, 20, 300, '体重');
-    if (weightError) errors.push(weightError);
-  }
-
-  // 身長のバリデーション
-  if (settings.height !== undefined) {
-    const heightError = validateRange(settings.height, 100, 250, '身長');
-    if (heightError) errors.push(heightError);
-  }
-
-  // 年齢のバリデーション
-  if (settings.age !== undefined) {
-    const ageError = validateRange(settings.age, 10, 120, '年齢');
-    if (ageError) errors.push(ageError);
-  }
-
-  // カロリー目標のバリデーション
-  if (settings.dailyCalorieGoal !== undefined) {
-    const calorieError = validateRange(settings.dailyCalorieGoal, 800, 5000, 'カロリー目標');
-    if (calorieError) errors.push(calorieError);
-  }
-
-  // 活動レベルのバリデーション
-  if (settings.activityLevel !== undefined) {
-    const validActivityLevels = ['sedentary', 'light', 'moderate', 'active', 'very_active'];
-    if (!validActivityLevels.includes(settings.activityLevel)) {
-      errors.push({
-        field: 'activityLevel',
-        message: '有効な活動レベルを選択してください',
-      });
-    }
-  }
-
-  // 性別のバリデーション
-  if (settings.gender !== undefined) {
-    const validGenders = ['male', 'female'];
-    if (!validGenders.includes(settings.gender)) {
-      errors.push({
-        field: 'gender',
-        message: '有効な性別を選択してください',
-      });
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
 }
 
 /**
@@ -169,46 +109,8 @@ export function validateAmount(amount: number): ValidationResult {
 }
 
 /**
- * 検索クエリのバリデーション
- */
-export function validateSearchQuery(query: string): ValidationResult {
-  const errors: ValidationError[] = [];
-
-  // 必須チェック
-  const requiredError = validateRequired(query, '検索キーワード');
-  if (requiredError) errors.push(requiredError);
-
-  // 長さチェック
-  if (query && query.length > 0) {
-    const lengthError = validateLength(query, 1, 50, '検索キーワード');
-    if (lengthError) errors.push(lengthError);
-  }
-
-  // 特殊文字チェック（基本的なサニタイズ）
-  if (query && /[<>{}[\]\\|`~!@#$%^&*()+=\/]/.test(query)) {
-    errors.push({
-      field: 'query',
-      message: '検索キーワードに使用できない文字が含まれています',
-    });
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-/**
  * エラーメッセージを表示用にフォーマット
  */
 export function formatValidationErrors(errors: ValidationError[]): string {
   return errors.map(error => error.message).join('\n');
-}
-
-/**
- * 特定のフィールドのエラーメッセージを取得
- */
-export function getFieldError(errors: ValidationError[], field: string): string | null {
-  const error = errors.find(e => e.field === field);
-  return error ? error.message : null;
 }
