@@ -191,7 +191,6 @@ export const signUp = async (event: APIGatewayProxyEvent): Promise<APIGatewayPro
       weight: 70,
       age: 20,
       gender: 'male',
-      activityLevel: 'moderate',
     };
 
     await docClient.send(new PutCommand({

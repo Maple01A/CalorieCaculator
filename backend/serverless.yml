@@ -123,6 +123,14 @@ functions:
           method: get
           cors: true
   
+  deleteMealRecord:
+    handler: src/lambda/handler.deleteMealRecord
+    events:
+      - http:
+          path: /meals/{mealId}
+          method: delete
+          cors: true
+  
   # ユーザー設定関連API
   getUserSettings:
     handler: src/lambda/handler.getUserSettings

@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -241,6 +241,38 @@ export const getDailySummary = async (event: APIGatewayProxyEvent): Promise<APIG
   }
 };
 
+// 食事記録削除
+export const deleteMealRecord = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const mealId = event.pathParameters?.mealId;
+
+    if (!mealId) {
+      return response(400, { error: '食事記録IDが必要です' });
+    }
+
+    // 対象の食事記録が存在するか確認
+    const existingMeal = await docClient.send(new GetCommand({
+      TableName: MEALS_TABLE,
+      Key: { id: mealId },
+    }));
+
+    if (!existingMeal.Item) {
+      return response(404, { error: '食事記録が見つかりません' });
+    }
+
+    // 削除実行
+    await docClient.send(new DeleteCommand({
+      TableName: MEALS_TABLE,
+      Key: { id: mealId },
+    }));
+
+    return response(200, { message: '食事記録を削除しました' });
+  } catch (error) {
+    console.error('Error deleting meal record:', error);
+    return response(500, { error: '食事記録削除中にエラーが発生しました' });
+  }
+};
+
 // ユーザー設定取得
 export const getUserSettings = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -287,7 +319,7 @@ export const updateUserSettings = async (event: APIGatewayProxyEvent): Promise<A
     const expressionAttributeValues: Record<string, any> = {};
 
     // 設定可能なフィールドのみを更新対象にする（認証情報は除外）
-    const allowedFields = ['dailyCalorieGoal', 'targetCalories', 'weight', 'height', 'age', 'gender', 'activityLevel'];
+    const allowedFields = ['dailyCalorieGoal', 'targetCalories', 'weight', 'height', 'age', 'gender'];
     
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
